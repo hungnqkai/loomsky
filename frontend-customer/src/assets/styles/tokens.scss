@@ -1,0 +1,79 @@
+/* src/assets/styles/tokens.scss */
+/* File này chứa toàn bộ Design Tokens từ LoomSky Brand Guidelines */
+
+:root {
+  /* 1. Color Palette */
+  /* Primary Brand Colors */
+  --loomsky-primary: #6366F1;
+  --loomsky-primary-light: #818CF8;
+  --loomsky-primary-dark: #4F46E5;
+
+  /* Secondary Colors */
+  --loomsky-secondary: #EC4899;
+  --loomsky-secondary-light: #F472B6;
+  --loomsky-secondary-dark: #DB2777;
+
+  /* Accent Colors */
+  --loomsky-accent: #10B981; /* Teal */
+  --loomsky-accent-alt: #F59E0B; /* Amber */
+
+  /* Neutral Colors */
+  --loomsky-neutral-900: #111827;
+  --loomsky-neutral-800: #1F2937;
+  --loomsky-neutral-700: #374151;
+  --loomsky-neutral-600: #4B5563;
+  --loomsky-neutral-500: #6B7280;
+  --loomsky-neutral-400: #9CA3AF;
+  --loomsky-neutral-300: #D1D5DB;
+  --loomsky-neutral-200: #E5E7EB;
+  --loomsky-neutral-100: #F3F4F6;
+  --loomsky-neutral-50: #F8FAFC;
+  --loomsky-white: #FFFFFF;
+
+  /* Feedback Colors */
+  --loomsky-success: #10B981;
+  --loomsky-warning: #F59E0B;
+  --loomsky-error: #EF4444;
+  --loomsky-info: #3B82F6;
+
+  /* 2. Typography */
+  /* Font Family */
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-family-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;   /* 12px */
+  --font-size-sm: 0.875rem;  /* 14px */
+  --font-size-base: 1rem;    /* 16px */
+  --font-size-lg: 1.125rem;  /* 18px */
+  --font-size-xl: 1.25rem;   /* 20px */
+  --font-size-2xl: 1.5rem;   /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem;  /* 36px */
+
+  /* Font Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* 3. Spacing & Sizing */
+  --spacing-unit: 4px;
+  --spacing-1: var(--spacing-unit);      /* 4px */
+  --spacing-2: calc(var(--spacing-unit) * 2);  /* 8px */
+  --spacing-3: calc(var(--spacing-unit) * 3);  /* 12px */
+  --spacing-4: calc(var(--spacing-unit) * 4);  /* 16px */
+  --spacing-5: calc(var(--spacing-unit) * 5);  /* 20px */
+  --spacing-6: calc(var(--spacing-unit) * 6);  /* 24px */
+  --spacing-8: calc(var(--spacing-unit) * 8);  /* 32px */
+  --spacing-10: calc(var(--spacing-unit) * 10); /* 40px */
+  --spacing-12: calc(var(--spacing-unit) * 12); /* 48px */
+  --spacing-16: calc(var(--spacing-unit) * 16); /* 64px */
+
+  /* 4. Border Radius */
+  --border-radius-sm: 4px;
+  --border-radius-md: 6px; /* Default */
+  --border-radius-lg: 8px;
+  --border-radius-xl: 12px;
+  --border-radius-full: 9999px;
+}

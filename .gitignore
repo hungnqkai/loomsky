@@ -1,0 +1,15 @@
+# Frontend Customer
+## Editor directories and files
+/frontend-customer/.vscode
+/frontend-customer/.editorconfig
+/frontend-customer/.env
+/frontend-customer/.gitattributes
+
+/frontend-customer/node_modules
+/frontend-customer/package-lock.json
+
+# Backend
+/backend/logs
+/backend/node_modules
+/backend/package-lock.json
+/backend/.env
