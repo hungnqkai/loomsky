@@ -42,9 +42,12 @@ const sequelize = new Sequelize(
 const models = {
   Client: require('./Client')(sequelize, Sequelize.DataTypes),
   User: require('./User')(sequelize, Sequelize.DataTypes),
+  UserSession: require('./UserSession')(sequelize, Sequelize.DataTypes),
+  SubscriptionPlan: require('./SubscriptionPlan')(sequelize, Sequelize.DataTypes),
+  Coupon: require('./Coupon')(sequelize, Sequelize.DataTypes),
   Subscription: require('./Subscription')(sequelize, Sequelize.DataTypes),
   Payment: require('./Payment')(sequelize, Sequelize.DataTypes),
-  UserSession: require('./UserSession')(sequelize, Sequelize.DataTypes)
+  CouponRedemption: require('./CouponRedemption')(sequelize, Sequelize.DataTypes),
 };
 
 // Set up associations
