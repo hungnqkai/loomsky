@@ -1,22 +1,22 @@
 const { models } = require('../database');
 const asyncHandler = require('../middleware/asyncHandler');
 
-// Chuyển từ class sang một đối tượng đơn giản để đảm bảo export hoạt động chính xác
 const subscriptionController = {
   /**
    * Get the current user's client subscription details
    */
   getMySubscription: asyncHandler(async (req, res) => {
     // req.user is populated by the 'auth' middleware
-    const clientId = req.user.clientId;
+    // SỬA LỖI: Đổi từ clientId thành client_id để khớp với đối tượng user từ middleware
+    const clientId = req.user.client_id;
 
     const subscription = await models.Subscription.findOne({
       where: { client_id: clientId },
       include: [
         {
           model: models.SubscriptionPlan,
-          as: 'plan', // Sử dụng alias đã định nghĩa
-          attributes: ['name', 'features'], // Chỉ lấy các trường cần thiết
+          as: 'plan',
+          attributes: ['name', 'features'],
         },
       ],
     });
@@ -24,7 +24,7 @@ const subscriptionController = {
     if (!subscription) {
       const error = new Error('No active subscription found for this client.');
       error.statusCode = 404;
-      throw error; // asyncHandler sẽ bắt và chuyển lỗi này đi
+      throw error;
     }
 
     res.json({
