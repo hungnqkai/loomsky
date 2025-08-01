@@ -28,7 +28,13 @@ const authenticateToken = async (req, res, next) => {
         as: 'client',
         include: [{
           model: models.Subscription,
-          as: 'activeSubscription'
+          as: 'activeSubscription',
+          // Thêm include lồng nhau để lấy thông tin plan
+          include: [{
+            model: models.SubscriptionPlan,
+            as: 'plan',
+            attributes: ['name', 'features'] // Chỉ lấy các trường cần thiết
+          }]
         }]
       }],
       attributes: { exclude: ['password'] }

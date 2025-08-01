@@ -22,6 +22,8 @@ module.exports = (sequelize, DataTypes) => {
     is_active: DataTypes.BOOLEAN,
     is_public: DataTypes.BOOLEAN,
     features: DataTypes.JSONB,
+    paypal_plan_id_monthly: DataTypes.STRING,
+    paypal_plan_id_yearly: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'SubscriptionPlan',

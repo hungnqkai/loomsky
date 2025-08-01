@@ -21,9 +21,12 @@ const authService = {
 
   resetPassword(data) {
     return api.post('/auth/reset-password', data);
-  }
+  },
 
-  // Các hàm logout, refreshToken... sẽ được thêm vào đây sau
+  acceptInvitation(data) {
+    // API này không nằm trong /auth, nên ta ghi đầy đủ
+    return api.post('/invitations/accept', data);
+  },
 };
 
 export default authService;

@@ -1,6 +1,6 @@
 const express = require('express');
 const subscriptionController = require('../../controllers/subscriptionController');
-const { authenticateToken } = require('../../middleware/auth');
+const { authenticateToken, requireRole } = require('../../middleware/auth');
 
 const router = express.Router();
 
@@ -13,13 +13,24 @@ router.get(
   subscriptionController.getMySubscription
 );
 
-// --- THÊM ROUTE MỚI Ở ĐÂY ---
 // @route   GET /api/v1/subscriptions/plans
 // @desc    Get all public subscription plans
 // @access  Public (Không cần đăng nhập)
 router.get(
   '/plans',
   subscriptionController.getSubscriptionPlans
+);
+
+/**
+ * @route   POST /api/v1/subscriptions/me/cancel
+ * @desc    Cancel the current active subscription
+ * @access  Private (Owner, Admin)
+ */
+router.post(
+  '/me/cancel',
+  authenticateToken,
+  requireRole(['owner', 'admin']), // Chỉ owner và admin được phép hủy
+  subscriptionController.cancelSubscription
 );
 
 module.exports = router;

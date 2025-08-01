@@ -28,7 +28,7 @@ const loomskyTheme = {
         warning: '#F59E0B',
         info: '#3B82F6',
         success: '#10B981',
-        background: '#F8FAFC', // Màu nền chung của app (màu Neutral-50)
+        background: '#f8fafd', // Màu nền chung của app (màu Neutral-50)
         surface: '#FFFFFF', // Màu của các bề mặt như Card, Menu
       },
     },

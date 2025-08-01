@@ -39,6 +39,11 @@ const router = createRouter({
           name: 'forgot-password',
           component: () => import('../views/auth/ForgotPasswordView.vue'),
         },
+        {
+          path: 'accept-invitation',
+          name: 'accept-invitation',
+          component: () => import('../views/auth/AcceptInvitationView.vue'),
+        },
       ],
     },
     {
@@ -69,7 +74,7 @@ const router = createRouter({
         {
           path: 'settings', // Đường dẫn /dashboard/settings
           name: 'dashboard-settings',
-          component: () => import('../views/dashboard/SettingsView.vue'),
+          component: () => import('../views/SettingsView.vue'),
         },
       ]
     },

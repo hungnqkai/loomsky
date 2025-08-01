@@ -10,6 +10,7 @@ const RedisStore = require('connect-redis').default;
 // Import configurations
 const config = require('./config');
 const { redisClient } = require('./config/redis');
+const path = require('path');
 
 // Import routes
 const routes = require('./routes');
@@ -65,6 +66,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Compression middleware
 app.use(compression());
+
+// Phục vụ các file tĩnh (ví dụ: logo đã upload)
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Request logging
 if (config.env !== 'test') {
