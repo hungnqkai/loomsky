@@ -16,8 +16,20 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import AppHeader from '@/components/layout/AppHeader.vue';
 import AppSidebar from '@/components/layout/AppSidebar.vue';
+import { useSubscriptionStore } from '@/stores/subscriptionStore';
+
+const subscriptionStore = useSubscriptionStore();
+
+onMounted(() => {
+  // Khi layout dashboard được tải, kiểm tra xem đã có dữ liệu subscription chưa.
+  // Nếu chưa có, gọi API để lấy về.
+  if (!subscriptionStore.subscription) {
+    subscriptionStore.fetchSubscription();
+  }
+});
 </script>
 
 <style scoped>

@@ -1,6 +1,5 @@
 const express = require('express');
 const subscriptionController = require('../../controllers/subscriptionController');
-// SỬA LỖI: Import đúng tên middleware là 'authenticateToken' giống như trong file auth.js
 const { authenticateToken } = require('../../middleware/auth');
 
 const router = express.Router();
@@ -12,6 +11,15 @@ router.get(
   '/me',
   authenticateToken, // SỬA LỖI: Sử dụng đúng middleware
   subscriptionController.getMySubscription
+);
+
+// --- THÊM ROUTE MỚI Ở ĐÂY ---
+// @route   GET /api/v1/subscriptions/plans
+// @desc    Get all public subscription plans
+// @access  Public (Không cần đăng nhập)
+router.get(
+  '/plans',
+  subscriptionController.getSubscriptionPlans
 );
 
 module.exports = router;

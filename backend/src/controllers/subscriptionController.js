@@ -6,8 +6,6 @@ const subscriptionController = {
    * Get the current user's client subscription details
    */
   getMySubscription: asyncHandler(async (req, res) => {
-    // req.user is populated by the 'auth' middleware
-    // SỬA LỖI: Đổi từ clientId thành client_id để khớp với đối tượng user từ middleware
     const clientId = req.user.client_id;
 
     const subscription = await models.Subscription.findOne({
@@ -31,7 +29,27 @@ const subscriptionController = {
       success: true,
       data: subscription,
     });
-  })
+  }),
+
+  /**
+   * THÊM HÀM MỚI
+   * Get all public and active subscription plans
+   */
+  getSubscriptionPlans: asyncHandler(async (req, res) => {
+    const plans = await models.SubscriptionPlan.findAll({
+      where: {
+        is_active: true,
+        is_public: true,
+      },
+      attributes: ['id', 'name', 'description', 'price_monthly', 'price_yearly', 'features'],
+      order: [['price_monthly', 'ASC']],
+    });
+
+    res.json({
+      success: true,
+      data: plans,
+    });
+  }),
 };
 
 module.exports = subscriptionController;
