@@ -19,7 +19,7 @@ const {
 } = require('../validators/authValidators');
 
 class AuthController {
-  /**
+    /**
    * Register new user and client
    */
   register = asyncHandler(async (req, res) => {
@@ -152,17 +152,36 @@ class AuthController {
 
         logger.info('User created successfully:', { userId: user.id });
 
-        // Create free subscription
-        logger.info('Creating free subscription');
+        // --- BẮT ĐẦU CẬP NHẬT LOGIC SUBSCRIPTION ---
+        logger.info('Finding default "Free" subscription plan');
+        const freePlan = await models.SubscriptionPlan.findOne({
+          where: { name: 'Free' },
+          transaction
+        });
+
+        if (!freePlan) {
+          logger.error('Default "Free" subscription plan not found. Please run seeders.');
+          throw new Error('Default subscription plan configuration is missing.');
+        }
+
+        logger.info('Creating new subscription for client:', { clientId: client.id, planId: freePlan.id });
+        const trialDays = 14;
+        const now = new Date();
+        const trialEndDate = new Date();
+        trialEndDate.setDate(now.getDate() + trialDays);
+
+        // Tạo subscription mới theo cấu trúc đã thiết kế
         await models.Subscription.create({
           client_id: client.id,
-          plan_name: 'free',
+          plan_id: freePlan.id,
           status: 'trialing',
-          amount: 0,
-          trial_days: 14
+          start_date: now,
+          end_date: trialEndDate,
+          trial_ends_at: trialEndDate,
         }, { transaction });
-
+        
         logger.info('Subscription created successfully');
+        // --- KẾT THÚC CẬP NHẬT LOGIC SUBSCRIPTION ---
 
         await transaction.commit();
         logger.info('Transaction committed successfully');
