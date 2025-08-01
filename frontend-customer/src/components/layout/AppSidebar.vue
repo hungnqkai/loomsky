@@ -25,6 +25,12 @@
         exact
       ></v-list-item>
       <v-list-item
+        prepend-icon="mdi-credit-card-outline"
+        title="Thanh toán"
+        value="billing"
+        to="/dashboard/billing"
+      ></v-list-item>
+      <v-list-item
         prepend-icon="mdi-account-group-outline"
         title="Team"
         value="team"

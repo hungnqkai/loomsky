@@ -9,6 +9,7 @@ module.exports = (sequelize, DataTypes) => {
       });
       Subscription.belongsTo(models.SubscriptionPlan, {
         foreignKey: 'plan_id',
+        as: 'plan' 
       });
       Subscription.belongsTo(models.Coupon, {
         foreignKey: 'active_coupon_id',

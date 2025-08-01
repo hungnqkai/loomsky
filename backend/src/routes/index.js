@@ -4,6 +4,7 @@ const router = express.Router();
 
 // Import route modules
 const authRoutes = require('./v1/auth');
+const subscriptionRoutes = require('./v1/subscription.js');
 // const customerRoutes = require('./v1/customer'); // Will be created in next steps
 // const adminRoutes = require('./v1/admin'); // Will be created in next steps
 
@@ -31,6 +32,7 @@ router.get('/health', (req, res) => {
 
 // Authentication routes (public)
 router.use('/v1/auth', authRoutes);
+router.use('/v1/subscriptions', subscriptionRoutes);
 
 // Customer routes (protected) - will be added in next phases
 // router.use('/v1/customer', authenticateToken, customerRoutes);

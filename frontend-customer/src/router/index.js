@@ -57,6 +57,11 @@ const router = createRouter({
           component: () => import('../views/dashboard/ProfileView.vue'),
         },
         {
+          path: 'billing',
+          name: 'dashboard-billing',
+          component: () => import('../views/dashboard/BillingView.vue'),
+        },
+        {
           path: 'team', // Đường dẫn /dashboard/team
           name: 'dashboard-team',
           component: () => import('../views/dashboard/TeamView.vue'),

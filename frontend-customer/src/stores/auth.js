@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue'; // Import computed
 import authService from '../services/authService';
 import router from '../router';
+import { useSubscriptionStore } from './subscriptionStore';
 
 export const useAuthStore = defineStore('auth', () => {
   // --- STATE ---
@@ -31,6 +32,10 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('user', JSON.stringify(userData)); // Lưu user vào localStorage
       localStorage.setItem('accessToken', tokens.access_token);
       localStorage.setItem('refreshToken', tokens.refresh_token);
+
+      // CẬP NHẬT: Lấy thông tin gói cước ngay sau khi đăng nhập
+      const subscriptionStore = useSubscriptionStore();
+      await subscriptionStore.fetchSubscription();
 
       // SỬA LỖI: Chuyển hướng đến dashboard sau khi đăng nhập thành công
       router.push({ name: 'dashboard' });
@@ -71,6 +76,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function handleLogout() {
+    const subscriptionStore = useSubscriptionStore();
+    subscriptionStore.clearSubscription();
+    
     user.value = null;
     accessToken.value = null;
     refreshToken.value = null;
