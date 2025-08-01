@@ -1,11 +1,11 @@
 // backend/src/services/emailService.js
-const nodemailer = require('nodemailer');
+const Mailjet = require('node-mailjet');
 const config = require('../config');
 const logger = require('../utils/logger');
 
 class EmailService {
   constructor() {
-    this.transporter = null;
+    this.mailjet = null;
     this.initialize();
   }
 
@@ -14,24 +14,16 @@ class EmailService {
    */
   initialize() {
     try {
-      if (!config.email.mailgun.apiKey || !config.email.mailgun.domain) {
-        logger.warn('Mailgun credentials not configured. Email service will be disabled.');
+      const { apiKey, apiSecret } = config.email.mailjet;
+      if (!apiKey || !apiSecret) {
+        logger.warn('Mailjet credentials not configured. Email service will be disabled.');
         return;
       }
 
-      this.transporter = nodemailer.createTransport({
-        host: 'smtp.mailgun.org',
-        port: 587,
-        secure: false,
-        auth: {
-          user: `postmaster@${config.email.mailgun.domain}`,
-          pass: config.email.mailgun.apiKey
-        }
-      });
-
-      logger.info('Email service initialized successfully');
+      this.mailjet = Mailjet.apiConnect(apiKey, apiSecret);
+      logger.info('Email service (Mailjet) initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize email service:', error);
+      logger.error('Failed to initialize Mailjet service:', error);
     }
   }
 
@@ -39,33 +31,45 @@ class EmailService {
    * Send email
    */
   async sendEmail(options) {
-    try {
-      if (!this.transporter) {
-        logger.warn('Email service not configured - skipping email send', { to: options.to, subject: options.subject });
-        return { success: false, message: 'Email service not configured' };
-      }
+    if (!this.mailjet) {
+      logger.warn('Email service not configured - skipping email send', { to: options.to, subject: options.subject });
+      return { success: false, message: 'Email service not configured' };
+    }
 
-      const mailOptions = {
-        from: `${config.email.fromName} <${config.email.from}>`,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-        ...options
-      };
-
-      const result = await this.transporter.sendMail(mailOptions);
-      
-      logger.info('Email sent successfully', {
-        to: options.to,
-        subject: options.subject,
-        messageId: result.messageId
+    const request = this.mailjet
+      .post('send', { version: 'v3.1' })
+      .request({
+        Messages: [
+          {
+            From: {
+              Email: config.email.from,
+              Name: config.email.fromName
+            },
+            To: [
+              {
+                Email: options.to,
+                Name: options.toName || '' // Mailjet requires a Name, can be empty
+              }
+            ],
+            Subject: options.subject,
+            TextPart: options.text,
+            HTMLPart: options.html
+          }
+        ]
       });
 
-      return result;
+    try {
+      const result = await request;
+      logger.info('Email sent successfully via Mailjet', {
+        to: options.to,
+        subject: options.subject,
+        messageId: result.body.Messages[0].To[0].MessageID
+      });
+      return result.body;
     } catch (error) {
-      logger.error('Failed to send email:', {
+      logger.error('Failed to send email via Mailjet:', {
         error: error.message,
+        statusCode: error.statusCode,
         to: options.to,
         subject: options.subject
       });
@@ -82,6 +86,7 @@ class EmailService {
 
     return await this.sendEmail({
       to: user.email,
+      toName: user.getFullName(),
       subject: `Welcome to ${config.app.name}!`,
       html,
       text
@@ -98,6 +103,7 @@ class EmailService {
 
     return await this.sendEmail({
       to: user.email,
+      toName: user.getFullName(),
       subject: 'Please verify your email address',
       html,
       text
@@ -114,6 +120,7 @@ class EmailService {
 
     return await this.sendEmail({
       to: user.email,
+      toName: user.getFullName(),
       subject: 'Reset your password',
       html,
       text
@@ -145,6 +152,7 @@ class EmailService {
 
     return await this.sendEmail({
       to: user.email,
+      toName: user.getFullName(),
       subject: 'Your password has been changed',
       html,
       text

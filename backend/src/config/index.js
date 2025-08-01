@@ -50,10 +50,9 @@ const config = {
   },
 
   email: {
-    mailgun: {
-      apiKey: environment.MAILGUN_API_KEY,
-      domain: environment.MAILGUN_DOMAIN,
-      host: environment.MAILGUN_HOST || 'api.mailgun.net'
+    mailjet: {
+      apiKey: environment.MAILJET_API_KEY,
+      apiSecret: environment.MAILJET_API_SECRET,
     },
     from: environment.EMAIL_FROM || 'noreply@loomsky.com',
     fromName: environment.EMAIL_FROM_NAME || 'LoomSky'
