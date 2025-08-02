@@ -1,6 +1,5 @@
 <template>
   <div>
-    <h1 class="text-h4 font-weight-bold mb-6">Cài đặt</h1>
     <v-row>
       <!-- Cột 1: Menu Dọc -->
       <v-col cols="12" md="2">
@@ -18,7 +17,7 @@
       </v-col>
 
       <!-- Cột 2: Nội dung trang con -->
-      <v-col cols="12" md="10">
+      <v-col cols="12" md="10" class="loomsky-background">
         <!-- 
           <router-view> sẽ render component con tương ứng 
           với đường dẫn (ví dụ: /settings/profile sẽ render CompanyProfileView)

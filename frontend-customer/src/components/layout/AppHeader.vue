@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar flat color="background">
+  <v-app-bar app flat color="background">
     <v-app-bar-nav-icon @click="$emit('toggle-sidebar')"></v-app-bar-nav-icon>
     <v-btn icon="mdi-magnify" class="mr-2"></v-btn>
     <v-spacer></v-spacer>

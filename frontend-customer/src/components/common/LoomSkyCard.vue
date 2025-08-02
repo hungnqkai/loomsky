@@ -28,7 +28,7 @@ defineOptions({
 .loomsky-card {
   // Ghi đè style mặc định của Vuetify
   border: 1px solid var(--loomsky-neutral-100) !important;
-  box-shadow: 0px 10px 20px -5px rgba(0, 0, 0, 0.08) !important;
-  border-radius: var(--border-radius-xl) !important; // 12px
+  box-shadow: none !important;
+  border-radius: var(--border-radius-xl) !important;
 }
 </style>

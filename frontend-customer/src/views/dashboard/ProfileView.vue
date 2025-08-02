@@ -1,10 +1,11 @@
 <template>
   <div>
-    <h1 class="text-h4 font-weight-bold mb-6">User Profile</h1>
+    <h1 class="loomsky-h1">Profile</h1>
 
     <!-- Card 1: Cập nhật thông tin cá nhân -->
     <LoomSkyCard class="mb-6">
-      <v-card-title class="text-h6">Thông tin cá nhân</v-card-title>
+      <v-card-title class="loomsky-h2">Personal Details</v-card-title>
+      <v-card-text class="loomsky-text-body"> To change your personal detail , edit and save from here</v-card-text>
       <v-card-text>
         <!-- Thông báo thành công hoặc lỗi cho form này -->
         <v-alert v-if="profileSuccess" type="success" variant="tonal" class="mb-4" density="compact">{{ profileSuccess }}</v-alert>
@@ -43,11 +44,12 @@
             <v-spacer></v-spacer>
             <v-btn 
               type="submit" 
+              class="loomsky-button-primary"
               color="primary" 
-              variant="tonal"
+              variant="flat"
               :loading="userStore.loading"
             >
-              Lưu thay đổi
+              Save changes
             </v-btn>
           </v-card-actions>
         </v-form>
@@ -56,7 +58,8 @@
 
     <!-- Card 2: Thay đổi mật khẩu -->
     <LoomSkyCard>
-      <v-card-title class="text-h6">Thay đổi mật khẩu</v-card-title>
+      <v-card-title class="loomsky-h2">Change Password</v-card-title>
+      <v-card-text class="loomsky-text-body">To change your password please confirm here</v-card-text>
       <v-card-text>
         <!-- Thông báo thành công hoặc lỗi cho form này -->
         <v-alert v-if="passwordSuccess" type="success" variant="tonal" class="mb-4" density="compact">{{ passwordSuccess }}</v-alert>
@@ -65,7 +68,7 @@
         <v-form @submit.prevent="onChangePassword" ref="passwordFormRef">
           <v-text-field
             v-model="passwordForm.current_password"
-            label="Mật khẩu hiện tại"
+            label="Current Password"
             type="password"
             variant="outlined"
             density="compact"
@@ -73,7 +76,7 @@
           ></v-text-field>
           <v-text-field
             v-model="passwordForm.new_password"
-            label="Mật khẩu mới"
+            label="New Password"
             type="password"
             variant="outlined"
             density="compact"
@@ -81,7 +84,7 @@
           ></v-text-field>
           <v-text-field
             v-model="passwordForm.new_password_confirmation"
-            label="Xác nhận mật khẩu mới"
+            label="Confirm Password"
             type="password"
             variant="outlined"
             density="compact"
@@ -90,12 +93,13 @@
           <v-card-actions class="pa-0 mt-4">
             <v-spacer></v-spacer>
             <v-btn 
+              class="loomsky-button-primary"
               type="submit" 
               color="primary" 
-              variant="tonal"
+              variant="flat"
               :loading="userStore.loading"
             >
-              Đổi mật khẩu
+              Change password
             </v-btn>
           </v-card-actions>
         </v-form>

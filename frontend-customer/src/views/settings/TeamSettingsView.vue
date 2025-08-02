@@ -1,11 +1,13 @@
 <template>
   <div>
     <!-- Header của trang -->
-    <div class="d-flex justify-space-between align-center mb-4">
-      <h2 class="text-h5 font-weight-bold">Quản lý đội nhóm</h2>
-      <v-btn color="primary" variant="tonal" @click="openInviteDialog">
-        <v-icon left>mdi-account-plus-outline</v-icon>
-        Mời thành viên
+    <div class="d-flex justify-end align-center mb-4">
+      <v-btn
+        class="loomsky-button-primary"
+        color="primary"
+        variant="flat"
+        @click="openInviteDialog">
+        Add member
       </v-btn>
     </div>
 
@@ -15,7 +17,7 @@
 
     <!-- Bảng danh sách thành viên -->
     <LoomSkyCard>
-      <v-card-title>Danh sách thành viên</v-card-title>
+      <v-card-title class="loomsky-h2">Member List</v-card-title>
       <v-data-table
         :headers="headers"
         :items="teamStore.members"
@@ -49,7 +51,7 @@
             ></v-switch>
 
             <!-- Nút Chỉnh sửa -->
-            <v-tooltip text="Chỉnh sửa vai trò">
+            <v-tooltip text="Edit role">
               <template v-slot:activator="{ props }">
                 <v-btn 
                   v-bind="props"
@@ -83,17 +85,17 @@
     <!-- Dialog Mời thành viên -->
     <v-dialog v-model="inviteDialog" max-width="500px" persistent>
       <v-card rounded="lg">
-        <v-card-title><span class="text-h5">Mời thành viên mới</span></v-card-title>
+        <v-card-title><span class="text-h5">Invite new members</span></v-card-title>
         <v-card-text>
           <v-form ref="inviteForm">
             <v-text-field v-model="invitation.email" label="Email" :rules="[rules.required, rules.email]" variant="outlined" density="compact"></v-text-field>
-            <v-select v-model="invitation.role" :items="['admin', 'member', 'viewer']" label="Vai trò" :rules="[rules.required]" variant="outlined" density="compact"></v-select>
+            <v-select v-model="invitation.role" :items="['admin', 'member', 'viewer']" label="Role" :rules="[rules.required]" variant="outlined" density="compact"></v-select>
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="closeInviteDialog">Hủy</v-btn>
-          <v-btn color="primary" variant="tonal" @click="handleInvite" :loading="teamStore.loading">Gửi lời mời</v-btn>
+          <v-btn class="loomsky-button-primary" color="error" variant="tonal" @click="closeInviteDialog">Cancel</v-btn>
+          <v-btn class="loomsky-button-primary" color="primary" variant="flat" @click="handleInvite" :loading="teamStore.loading">Send invitation</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -101,17 +103,17 @@
     <!-- Dialog Chỉnh sửa vai trò -->
     <v-dialog v-model="editDialog" max-width="500px" persistent>
       <v-card rounded="lg">
-        <v-card-title><span class="text-h5">Chỉnh sửa thành viên</span></v-card-title>
+        <v-card-title class="loomsky-h2">Update member</v-card-title>
         <v-card-text>
           <p class="mb-4">
-            Thay đổi vai trò cho <strong>{{ memberToEdit?.email }}</strong>
+            Change roles for <strong>{{ memberToEdit?.email }}</strong>
           </p>
-          <v-select v-model="editedRole" :items="['admin', 'member', 'viewer']" label="Vai trò mới" variant="outlined" density="compact"></v-select>
+          <v-select v-model="editedRole" :items="['admin', 'member', 'viewer']" label="New role" variant="outlined" density="compact"></v-select>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="closeEditDialog">Hủy</v-btn>
-          <v-btn color="primary" variant="tonal" @click="handleUpdateRole" :loading="teamStore.loading">Lưu thay đổi</v-btn>
+          <v-btn class="loomsky-button-primary" color="error" variant="tonal" @click="closeEditDialog">Cancel</v-btn>
+          <v-btn class="loomsky-button-primary" color="primary" variant="flat" @click="handleUpdateRole" :loading="teamStore.loading">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -119,9 +121,9 @@
     <!-- Dialog Xác nhận Xóa -->
     <ConfirmDialog
       v-model="deleteDialog"
-      title="Xác nhận xóa"
-      :message="`Bạn có chắc chắn muốn xóa thành viên <strong>${memberToDelete?.email}</strong>?`"
-      confirm-text="Đồng ý xóa"
+      title="Confirm deletion"
+      :message="`Are you sure you want to delete the member? <strong>${memberToDelete?.email}</strong>?`"
+      confirm-text="Confirm deletion"
       confirm-color="error"
       :loading="teamStore.loading"
       @confirm="handleDelete"
@@ -141,11 +143,11 @@ const authStore = useAuthStore();
 
 // --- State cho Bảng ---
 const headers = [
-  { title: 'Họ và tên', value: 'first_name', sortable: true },
+  { title: 'Name', value: 'first_name', sortable: true },
   { title: 'Email', value: 'email', sortable: true },
-  { title: 'Vai trò', value: 'role', sortable: true },
-  { title: 'Trạng thái', value: 'status', sortable: true },
-  { title: 'Hành động', value: 'actions', sortable: false, align: 'end' },
+  { title: 'Role', value: 'role', sortable: true },
+  { title: 'Status', value: 'status', sortable: true },
+  { title: 'Action', value: 'actions', sortable: false, align: 'end' },
 ];
 
 // --- State cho Dialogs ---

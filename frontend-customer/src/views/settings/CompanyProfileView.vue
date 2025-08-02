@@ -1,34 +1,16 @@
 <template>
-  <div>
-    <!-- Header của trang, chứa tiêu đề và nút Lưu -->
-    <div class="d-flex justify-space-between align-center mb-4">
-      <h2 class="text-h5 font-weight-bold">Hồ sơ Công ty</h2>
-      <v-btn
-        color="primary"
-        variant="tonal"
-        @click="onUpdateClient"
-        :loading="clientStore.loading"
-        :disabled="!isFormDirty"
-      >
-        Lưu thay đổi
-      </v-btn>
-    </div>
-
-    <!-- Thông báo thành công hoặc lỗi -->
-    <v-alert v-if="clientStore.successMessage" type="success" variant="tonal" class="mb-4" density="compact" closable @click:close="clientStore.clearMessages()">{{ clientStore.successMessage }}</v-alert>
-    <v-alert v-if="clientStore.error" type="error" variant="tonal" class="mb-4" density="compact" closable @click:close="clientStore.clearMessages()">{{ clientStore.error }}</v-alert>
-
+  <div style="max-width:1000px">
     <!-- Giao diện loading khi chưa có dữ liệu -->
     <div v-if="clientStore.loading && !clientStore.client" class="text-center mt-10">
       <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-      <p class="mt-4 text-medium-emphasis">Đang tải dữ liệu công ty...</p>
+      <p class="mt-4 text-medium-emphasis">Loading company data...</p>
     </div>
 
     <!-- Form chính, chỉ hiển thị khi đã có dữ liệu -->
     <v-form v-else-if="clientStore.client">
       <!-- Card 1: Thông tin chung -->
-      <LoomSkyCard class="mb-6">
-        <v-card-title>Thông tin chung</v-card-title>
+      <LoomSkyCard class="mb-10">
+        <v-card-title class="loomsky-h2">General information</v-card-title>
         <v-card-text>
           <v-row>
             <!-- CẢI TIẾN: Khu vực Upload Logo -->
@@ -52,8 +34,8 @@
                 </div>
               </div>
               <div>
-                <v-btn variant="tonal" @click="triggerFileInput">Tải ảnh lên</v-btn>
-                <div class="text-caption text-medium-emphasis mt-2">Chấp nhận JPG, PNG, SVG. Tối đa 2MB.</div>
+                <v-btn variant="tonal" @click="triggerFileInput">Upload photo</v-btn>
+                <div class="text-caption text-medium-emphasis mt-2">Accept JPG, PNG, SVG. Max 2MB.</div>
                 <!-- File input được ẩn đi -->
                 <input
                   ref="fileInput"
@@ -68,16 +50,16 @@
             
             <!-- Các trường thông tin -->
             <v-col cols="12" md="6">
-              <v-text-field v-model="clientForm.name" label="Tên công ty" variant="outlined" density="compact"></v-text-field>
+              <v-text-field v-model="clientForm.name" label="Company name" variant="outlined" density="compact"></v-text-field>
             </v-col>
             <v-col cols="12" md="6">
-              <v-text-field v-model="clientForm.domain" label="Tên miền website" variant="outlined" density="compact" placeholder="https://example.com"></v-text-field>
+              <v-text-field v-model="clientForm.domain" label="Website" variant="outlined" density="compact" placeholder="https://example.com"></v-text-field>
             </v-col>
             <v-col cols="12" md="6">
               <v-select v-model="clientForm.industry" :items="industries" label="Lĩnh vực" variant="outlined" density="compact"></v-select>
             </v-col>
             <v-col cols="12" md="6">
-              <v-select v-model="clientForm.company_size" :items="companySizes" label="Quy mô công ty" variant="outlined" density="compact"></v-select>
+              <v-select v-model="clientForm.company_size" :items="companySizes" label="Company size" variant="outlined" density="compact"></v-select>
             </v-col>
           </v-row>
         </v-card-text>
@@ -85,22 +67,104 @@
 
       <!-- Các Card khác giữ nguyên -->
       <!-- Card 2: Thông tin liên hệ & địa chỉ -->
-      <LoomSkyCard class="mb-6">
-        <v-card-title>Thông tin liên hệ & địa chỉ</v-card-title>
+      <LoomSkyCard class="mb-10">
+        <v-card-title class="loomsky-h2">Contact information & address</v-card-title>
         <v-card-text>
-          <!-- ... nội dung không đổi ... -->
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="clientForm.email"
+                label="Email"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="clientForm.phone"
+                label="Phone"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12">
+              <v-text-field
+                v-model="clientForm.address"
+                label="Address"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="clientForm.city"
+                label="City"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+             <v-col cols="12" md="4">
+              <v-text-field
+                v-model="clientForm.postal_code"
+                label="Zip code"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+             <v-col cols="12" md="4">
+              <v-text-field
+                v-model="clientForm.country"
+                label="Country"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+          </v-row>
         </v-card-text>
       </LoomSkyCard>
 
       <!-- Card 3: Thông tin thanh toán -->
-      <LoomSkyCard class="mb-6">
-         <v-card-title>Thanh toán</v-card-title>
+      <LoomSkyCard class="mb-10">
+         <v-card-title class="loomsky-h2">Payment</v-card-title>
          <v-card-text>
-            <!-- ... nội dung không đổi ... -->
+            <v-text-field
+                v-model="clientForm.billing_email"
+                label="Email to receive invoice"
+                variant="outlined"
+                density="compact"
+                hint="Invoices and payment notices will be sent here.."
+                persistent-hint
+            ></v-text-field>
+             <v-text-field
+                v-model="clientForm.tax_id"
+                label="Tax code"
+                variant="outlined"
+                density="compact"
+                class="mt-4"
+            ></v-text-field>
          </v-card-text>
       </LoomSkyCard>
 
     </v-form>
+
+    <!-- Header của trang, chứa tiêu đề và nút Lưu -->
+    <div class="d-flex justify-end align-center mb-4">
+      <v-btn
+        class="loomsky-button-primary"
+        color="primary"
+        variant="flat"
+        @click="onUpdateClient"
+        :loading="clientStore.loading"
+        :disabled="!isFormDirty"
+      >
+        Save changes
+      </v-btn>
+    </div>
+
+    <!-- Thông báo thành công hoặc lỗi -->
+    <v-alert v-if="clientStore.successMessage" type="success" variant="tonal" class="mb-4" density="compact" closable @click:close="clientStore.clearMessages()">{{ clientStore.successMessage }}</v-alert>
+    <v-alert v-if="clientStore.error" type="error" variant="tonal" class="mb-4" density="compact" closable @click:close="clientStore.clearMessages()">{{ clientStore.error }}</v-alert>
+
   </div>
 </template>
 

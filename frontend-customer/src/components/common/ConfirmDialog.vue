@@ -1,10 +1,10 @@
 <template>
   <!-- v-model="dialog" sẽ điều khiển việc đóng/mở dialog từ component cha -->
-  <v-dialog v-model="dialog" max-width="500px" persistent>
+  <v-dialog v-model="dialog" max-width="600px" persistent>
     <v-card rounded="lg">
-      <v-card-title class="d-flex align-center">
+      <v-card-title class="loomsky-h2">
         <v-icon :color="confirmColor" class="mr-2">{{ icon }}</v-icon>
-        <span class="text-h6">{{ title }}</span>
+        {{ title }}
       </v-card-title>
       <v-card-text class="py-4">
         <!-- Sử dụng v-html để có thể truyền message dạng HTML nếu cần -->

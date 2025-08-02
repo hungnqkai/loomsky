@@ -1,5 +1,7 @@
 <template>
   <v-navigation-drawer
+    app
+    class="loomsky-sidebar"
     :rail="rail"
     :expand-on-hover="rail"
     permanent

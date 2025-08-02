@@ -1,4 +1,5 @@
 import './assets/styles/tokens.scss' // Import design tokens đầu tiên
+import './assets/main.scss'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

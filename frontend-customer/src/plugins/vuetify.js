@@ -25,14 +25,14 @@ const loomskyTheme = {
     light: {
       dark: false,
       colors: {
-        primary: '#6366F1',     // Tương ứng với --loomsky-primary
+        primary: '#0074ba',     // Tương ứng với --loomsky-primary
         secondary: '#EC4899',   // Tương ứng với --loomsky-secondary
         accent: '#10B981',      // Tương ứng với --loomsky-accent
         error: '#EF4444',       // Tương ứng với --loomsky-error
         warning: '#F59E0B',     // Tương ứng với --loomsky-warning
         info: '#3B82F6',        // Tương ứng với --loomsky-info
         success: '#10B981',     // Tương ứng với --loomsky-success
-        background: '#F8FAFC',  // Tương ứng với --loomsky-neutral-50
+        background: '#f8fafd',  // Tương ứng với --loomsky-neutral-50
         surface: '#FFFFFF',     // Tương ứng với --loomsky-white
         colorless: '#ffffff00',   // Trong suốt
         
