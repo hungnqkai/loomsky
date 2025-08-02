@@ -11,25 +11,34 @@ import 'vuetify/styles'
 // Composables
 import { createVuetify } from 'vuetify'
 
-// Lấy theme từ Brand Guidelines của LoomSky
-// Đây là nơi chúng ta định nghĩa màu sắc thương hiệu cho các component của Vuetify
+// --- GIAI ĐOẠN 0: TÍCH HỢP DESIGN TOKENS (FIXED) ---
+// Cấu hình theme cho Vuetify để sử dụng các màu sắc từ Brand Guidelines.
+//
+// LƯU Ý: Chúng ta định nghĩa màu trực tiếp ở đây để đảm bảo Vuetify
+// có thể tính toán các biến thể màu (lighten, darken) một cách ổn định nhất.
+// Điều này tạo ra một sự trùng lặp nhỏ với file `tokens.scss`, nhưng đảm bảo
+// hệ thống hoạt động đáng tin cậy.
+//
+// QUY TẮC: Khi cập nhật màu trong `tokens.scss`, cần cập nhật đồng bộ ở file này.
 const loomskyTheme = {
   themes: {
     light: {
+      dark: false,
       colors: {
-        primary: '#6366F1',
-        'primary-light': '#818CF8',
-        'primary-dark': '#4F46E5',
-        secondary: '#EC4899',
-        'secondary-light': '#F472B6',
-        'secondary-dark': '#DB2777',
-        accent: '#10B981', // Note: Using success color as accent for better visibility
-        error: '#EF4444',
-        warning: '#F59E0B',
-        info: '#3B82F6',
-        success: '#10B981',
-        background: '#f8fafd', // Màu nền chung của app (màu Neutral-50)
-        surface: '#FFFFFF', // Màu của các bề mặt như Card, Menu
+        primary: '#6366F1',     // Tương ứng với --loomsky-primary
+        secondary: '#EC4899',   // Tương ứng với --loomsky-secondary
+        accent: '#10B981',      // Tương ứng với --loomsky-accent
+        error: '#EF4444',       // Tương ứng với --loomsky-error
+        warning: '#F59E0B',     // Tương ứng với --loomsky-warning
+        info: '#3B82F6',        // Tương ứng với --loomsky-info
+        success: '#10B981',     // Tương ứng với --loomsky-success
+        background: '#F8FAFC',  // Tương ứng với --loomsky-neutral-50
+        surface: '#FFFFFF',     // Tương ứng với --loomsky-white
+        colorless: '#ffffff00',   // Trong suốt
+        
+        // Định nghĩa thêm các màu chữ tương phản để Vuetify tự động sử dụng
+        'on-background': '#1F2937', // Tương ứng với --loomsky-neutral-800
+        'on-surface': '#111827',    // Tương ứng với --loomsky-neutral-900
       },
     },
   },

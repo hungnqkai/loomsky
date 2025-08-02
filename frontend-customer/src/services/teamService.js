@@ -17,6 +17,15 @@ const teamService = {
   },
 
   /**
+   * THÊM MỚI: Cập nhật thông tin của một thành viên
+   * @param {string} userId - ID của người dùng cần cập nhật
+   * @param {object} updateData - Dữ liệu cần cập nhật { role, status }
+   */
+  updateMember(userId, updateData) {
+    return api.put(`/clients/me/members/${userId}`, updateData);
+  },
+
+  /**
    * Xóa một thành viên khỏi team
    * @param {string} userId - ID của người dùng cần xóa
    */

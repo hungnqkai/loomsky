@@ -1,10 +1,10 @@
 <template>
   <v-layout>
-    <!-- Sidebar (Navigation Drawer) -->
-    <app-sidebar />
+    <!-- Truyền trạng thái `rail` xuống AppSidebar như một prop bình thường -->
+    <app-sidebar :rail="rail" />
 
-    <!-- Header (App Bar) -->
-    <app-header />
+    <!-- Lắng nghe sự kiện `toggle-sidebar` từ AppHeader -->
+    <app-header @toggle-sidebar="toggleSidebar" />
 
     <!-- Nội dung chính của các trang -->
     <v-main>
@@ -16,16 +16,23 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import AppHeader from '@/components/layout/AppHeader.vue';
 import AppSidebar from '@/components/layout/AppSidebar.vue';
 import { useSubscriptionStore } from '@/stores/subscriptionStore';
 
 const subscriptionStore = useSubscriptionStore();
 
+// 'rail' là nguồn chân lý duy nhất cho trạng thái của sidebar.
+// true = thu gọn (hover được), false = mở rộng (đã ghim).
+const rail = ref(true);
+
+// Hàm này chỉ thay đổi trạng thái "ghim", không can thiệp vào hover.
+const toggleSidebar = () => {
+  rail.value = !rail.value;
+};
+
 onMounted(() => {
-  // Khi layout dashboard được tải, kiểm tra xem đã có dữ liệu subscription chưa.
-  // Nếu chưa có, gọi API để lấy về.
   if (!subscriptionStore.subscription) {
     subscriptionStore.fetchSubscription();
   }

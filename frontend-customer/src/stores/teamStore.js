@@ -49,6 +49,32 @@ export const useTeamStore = defineStore('team', () => {
     }
   }
 
+  /**
+   * THÊM MỚI: Action để cập nhật thành viên
+   * @param {string} userId - ID của thành viên
+   * @param {object} data - Dữ liệu cập nhật { role?, status? }
+   */
+  async function updateMember(userId, data) {
+    loading.value = true; // Có thể dùng một biến loading riêng nếu muốn
+    clearMessages();
+    try {
+      const response = await teamService.updateMember(userId, data);
+      successMessage.value = response.data.message;
+      
+      // Cập nhật lại thành viên trong danh sách mà không cần gọi lại API
+      const index = members.value.findIndex(m => m.id === userId);
+      if (index !== -1) {
+        members.value[index] = { ...members.value[index], ...response.data.data };
+      }
+      return true;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Update failed.';
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   // Xóa thành viên
   async function removeMember(userId) {
     loading.value = true;
@@ -73,6 +99,7 @@ export const useTeamStore = defineStore('team', () => {
     clearMessages,
     fetchMembers,
     inviteMember,
+    updateMember,
     removeMember,
   };
 });

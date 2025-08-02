@@ -126,6 +126,79 @@ const clientController = {
     }),
 
     /**
+     * @desc    Update a team member's details (role, status)
+     * @route   PUT /api/v1/clients/me/members/:userId
+     * @access  Private (Owner, Admin)
+     */
+    updateTeamMember: asyncHandler(async (req, res) => {
+        const { userId } = req.params;
+        const { role, status } = req.body;
+        const updater = req.user; // Người thực hiện hành động
+        const clientId = req.user.client_id;
+
+        // --- 1. Kiểm tra các điều kiện nghiệp vụ ---
+        if (updater.id === userId) {
+            return res.status(400).json({
+                success: false,
+                error: 'You cannot change your own role or status.',
+            });
+        }
+
+        const memberToUpdate = await models.User.findOne({
+            where: { id: userId, client_id: clientId },
+        });
+
+        if (!memberToUpdate) {
+            return res.status(404).json({
+                success: false,
+                error: 'Team member not found.',
+            });
+        }
+
+        // Owner là bất khả xâm phạm
+        if (memberToUpdate.role === 'owner') {
+            return res.status(403).json({
+                success: false,
+                error: 'Cannot modify the team owner.',
+            });
+        }
+        
+        // Không cho phép gán vai trò 'owner' cho người khác
+        if (role === 'owner') {
+            return res.status(400).json({
+                success: false,
+                error: 'Cannot assign the "owner" role.',
+            });
+        }
+
+        // --- 2. Xây dựng object để cập nhật ---
+        const updates = {};
+        if (role) {
+            updates.role = role;
+        }
+        if (status) {
+            // Chỉ cho phép cập nhật thành 'active' hoặc 'inactive'
+            if (['active', 'inactive'].includes(status)) {
+                 updates.status = status;
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status provided.',
+                });
+            }
+        }
+        
+        // --- 3. Thực hiện cập nhật ---
+        await memberToUpdate.update(updates);
+
+        res.status(200).json({
+            success: true,
+            message: 'Team member updated successfully.',
+            data: memberToUpdate, // Trả về thông tin thành viên đã được cập nhật
+        });
+    }),
+
+    /**
      * @desc    Remove a team member
      * @route   DELETE /api/v1/clients/me/members/:userId
      * @access  Private (Owner, Admin)

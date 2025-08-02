@@ -1,44 +1,39 @@
 <template>
   <v-navigation-drawer
-    expand-on-hover
-    rail
+    :rail="rail"
+    :expand-on-hover="rail"
+    permanent
   >
+    <!-- Phần Logo & Tên User -->
     <v-list>
-      <!-- THÊM LINK BỌC NGOÀI V-LIST-ITEM -->
-      <router-link to="/dashboard/profile" class="text-decoration-none text-white">
-        <v-list-item
-          prepend-avatar="https://randomuser.me/api/portraits/women/85.jpg"
-          :title="authStore.user?.first_name || 'LoomSky User'"
-          :subtitle="authStore.user?.email || ''"
-        ></v-list-item>
-      </router-link>
+      <v-list-item
+        prepend-avatar="https://placehold.co/40x40/6366f1/ffffff?text=L"
+        title="LoomSky"
+        class="font-weight-bold text-primary"
+      ></v-list-item>
+
     </v-list>
 
     <v-divider></v-divider>
 
-    <v-list density="compact" nav>
+    <!-- Các mục điều hướng đã được tinh gọn -->
+    <v-list nav density="compact">
       <v-list-item
-        prepend-icon="mdi-view-dashboard"
+        prepend-icon="mdi-view-dashboard-outline"
         title="Dashboard"
         value="dashboard"
         to="/dashboard"
         exact
       ></v-list-item>
-      <v-list-item
-        prepend-icon="mdi-credit-card-outline"
-        title="Thanh toán"
-        value="billing"
-        to="/dashboard/billing"
-      ></v-list-item>
-      <v-list-item
-        prepend-icon="mdi-account-group-outline"
-        title="Team"
-        value="team"
-        to="/dashboard/team"
-      ></v-list-item>
+      
+      <!-- CÁC MỤC CHỨC NĂNG CHÍNH SẼ Ở ĐÂY -->
+      
+      <v-divider></v-divider>
+
+      <!-- Chỉ còn một link duy nhất đến khu vực Cài đặt -->
       <v-list-item
         prepend-icon="mdi-cog-outline"
-        title="Settings"
+        title="Cài đặt"
         value="settings"
         to="/dashboard/settings"
       ></v-list-item>
@@ -47,6 +42,11 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/auth';
-const authStore = useAuthStore();
+
+defineProps({
+  rail: {
+    type: Boolean,
+    default: true,
+  }
+});
 </script>

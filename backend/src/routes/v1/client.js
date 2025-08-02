@@ -77,6 +77,29 @@ router.post(
 );
 
 /**
+ * @route   PUT /api/v1/clients/me/members/:userId
+ * @desc    Update a team member
+ * @access  Private (Owner, Admin)
+ */
+router.put(
+  '/me/members/:userId',
+  requireRole(['owner', 'admin']), // Chỉ owner và admin được cập nhật
+  validate({
+    params: Joi.object({
+      userId: Joi.string().uuid().required(),
+    }),
+    body: Joi.object({
+      // Các trường đều là optional, nhưng ít nhất phải có 1 trường
+      role: Joi.string().valid('admin', 'member', 'viewer').optional(),
+      status: Joi.string().valid('active', 'inactive').optional(),
+    }).min(1).messages({ // .min(1) yêu cầu body không được rỗng
+        'object.min': 'At least one field (role or status) must be provided for update.'
+    }),
+  }),
+  clientController.updateTeamMember
+);
+
+/**
  * @route   DELETE /api/v1/clients/me/members/:userId
  * @desc    Remove a team member
  * @access  Private (Owner, Admin)
