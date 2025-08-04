@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoomSky SDK Test</title>
+    <script type="text/javascript">
+        // Giả lập Data Layer mà plugin WordPress sẽ tạo ra
+        window.loomskyDataLayer = {
+            platform: 'test-html',
+            page_type: 'home',
+            user: {
+                is_logged_in: false,
+                wp_user_id: 0,
+            }
+        };
+    </script>
+</head>
+<body>
+    <h1>Welcome to the LoomSky SDK Test Page!</h1>
+    <p>Open the browser's developer console to see the SDK logs.</p>
+
+    <!-- 
+      QUAN TRỌNG: 
+      - Nhúng file SDK đã được build từ thư mục /dist.
+      - Thay thế "YOUR_API_KEY_HERE" bằng một API Key thực tế từ bảng 'Websites' trong database của bạn.
+    -->
+    <script async src="./dist/loomsky-sdk.iife.js" data-api-key="ls_key_1b6f5ceb1ff11cd30118c8214cd00258"></script>
+</body>
+</html>

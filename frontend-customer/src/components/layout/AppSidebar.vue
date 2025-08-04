@@ -32,7 +32,14 @@
       
       <v-divider></v-divider>
 
-      <!-- Chỉ còn một link duy nhất đến khu vực Cài đặt -->
+      <!-- === THÊM NHÓM MENU MỚI === -->
+      <v-list-item
+        prepend-icon="mdi-target-account"
+        title="Tracking"
+        value="tracking"
+        to="/tracking/websites"
+      ></v-list-item>
+      <!-- === KẾT THÚC THÊM MỚI === -->
       <v-list-item
         prepend-icon="mdi-cog-outline"
         title="Cài đặt"

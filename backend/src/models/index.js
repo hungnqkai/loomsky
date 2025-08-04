@@ -48,6 +48,12 @@ const models = {
   Subscription: require('./Subscription')(sequelize, Sequelize.DataTypes),
   Payment: require('./Payment')(sequelize, Sequelize.DataTypes),
   CouponRedemption: require('./CouponRedemption')(sequelize, Sequelize.DataTypes),
+  Website: require('./Website')(sequelize, Sequelize.DataTypes),
+  Pixel: require('./Pixel')(sequelize, Sequelize.DataTypes),
+  EventFilter: require('./EventFilter')(sequelize, Sequelize.DataTypes),
+  Blacklist: require('./Blacklist')(sequelize, Sequelize.DataTypes),
+  Session: require('./Session')(sequelize, Sequelize.DataTypes),
+  Event: require('./Event')(sequelize, Sequelize.DataTypes),
 };
 
 // Set up associations

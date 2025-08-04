@@ -78,6 +78,16 @@ const routes = [
           },
         ]
       },
+      {
+        path: '/tracking/websites',
+        name: 'website-list',
+        component: () => import('../views/tracking/WebsiteListView.vue'),
+      },
+      {          path: '/tracking/websites/:id',
+        name: 'website-detail',
+        component: () => import('../views/tracking/WebsiteDetailView.vue'),
+        props: true, // Tự động truyền `id` từ URL vào làm prop cho component
+      },
       // === ĐÃ XÓA STYLE GUIDE RA KHỎI ĐÂY ===
     ]
   },
