@@ -72,6 +72,7 @@ const addEntry = async () => {
     if (success) {
         form.value.reset();
         Object.assign(newItem, defaultItem);
+        form.value.resetValidation();
     }
 };
 

@@ -46,11 +46,17 @@ File: src/views/tracking/WebsiteDetailView.vue (CẬP NHẬT)
         </v-window-item>
 
         <v-window-item value="pixels">
-          <pixel-manager :website-id="id" />
+          <pixel-manager 
+            :website-id="id" 
+            :platform-type="websiteStore.currentWebsite.platform_type"
+          />
         </v-window-item>
         
         <v-window-item value="events">
-           <event-manager :website-id="id" />
+           <event-manager 
+            :website-id="id" 
+            :platform-type="websiteStore.currentWebsite.platform_type"
+           />
         </v-window-item>
 
         <v-window-item value="filters">

@@ -14,7 +14,7 @@ export const useWebsiteStore = defineStore('website', () => {
   const eventFilters = ref([]);
   const blacklist = ref([]);
   const loading = ref(false);
-  const actionLoading = ref(false);
+  const actionLoading = ref(false); // Loading riêng cho các hành động nhỏ
   const error = ref(null);
   const successMessage = ref(null);
 
@@ -61,6 +61,7 @@ export const useWebsiteStore = defineStore('website', () => {
     try {
       const response = await websiteService.getWebsiteById(websiteId);
       currentWebsite.value = response.data.data;
+      // Tải song song các dữ liệu con
       await Promise.all([
         fetchPixels(websiteId),
         fetchEventFilters(websiteId),

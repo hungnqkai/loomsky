@@ -81,15 +81,11 @@ const defaultItem = { event_name: '', rules: [{ field: 'time_on_page', operator:
 const newItem = reactive({ ...defaultItem });
 const rules = { required: v => !!v || 'Trường này là bắt buộc.' };
 
-const addRule = () => {
-    newItem.rules.push({ field: '', operator: 'eq', value: '' });
-};
-const removeRule = (index) => {
-    newItem.rules.splice(index, 1);
-};
+const addRule = () => { newItem.rules.push({ field: '', operator: 'eq', value: '' }); };
+const removeRule = (index) => { newItem.rules.splice(index, 1); };
 
 const openDialog = () => {
-    Object.assign(newItem, defaultItem);
+    Object.assign(newItem, { event_name: '', rules: [{ field: 'time_on_page', operator: 'gt', value: '5' }] });
     dialog.value = true;
 };
 const closeDialog = () => {

@@ -1,6 +1,6 @@
 <!-- 
 File: src/components/tracking/PixelManager.vue (CẬP NHẬT)
-- Hoàn thiện logic CRUD cho Pixels.
+- Thay thế textarea JSON bằng giao diện xây dựng quy tắc trực quan.
 -->
 <template>
     <v-card flat>
@@ -36,10 +36,22 @@ File: src/components/tracking/PixelManager.vue (CẬP NHẬT)
                     <v-form ref="form">
                         <v-text-field v-model="editedItem.pixel_id" label="Facebook Pixel ID" :rules="[rules.required, rules.numeric]" variant="outlined" hint="Chỉ nhập chuỗi số ID của Pixel." persistent-hint></v-text-field>
                         <v-text-field v-model="editedItem.access_token" label="Conversion API Access Token" :rules="[rules.required]" variant="outlined" class="mt-4" hint="Token cần thiết để gửi sự kiện từ server." persistent-hint></v-text-field>
+                        
                         <v-divider class="my-6"></v-divider>
-                        <h3 class="text-h6 mb-2">Cấu hình Nâng cao</h3>
-                        <v-textarea v-model="editedItem.activation_rules" label="Quy tắc Kích hoạt (JSON)" variant="outlined" rows="5" hint="Nhập một mảng JSON các quy tắc. Ví dụ: [{&quot;type&quot;: &quot;url_contains&quot;, &quot;value&quot;: &quot;/products&quot;}]" persistent-hint></v-textarea>
-                        <v-textarea v-model="editedItem.tracking_config" label="Cấu hình Tracking (JSON)" variant="outlined" rows="5" class="mt-4" hint="Nhập một object JSON để cài đặt sự kiện và chuyển đổi." persistent-hint></v-textarea>
+                        <h3 class="text-h6 mb-2">Quy tắc Kích hoạt Pixel</h3>
+                        <p class="text-body-2 text-medium-emphasis mb-4">
+                            Xác định các điều kiện để Pixel này được chèn vào trang. Nếu không có quy tắc nào, Pixel sẽ được chèn vào tất cả các trang.
+                        </p>
+                        
+                        <div v-for="(rule, index) in editedItem.activation_rules" :key="index" class="d-flex align-center my-2">
+                            <v-select v-model="rule.type" :items="availableRuleTypes" label="Loại điều kiện" density="compact" hide-details class="mr-2"></v-select>
+                            <v-text-field v-model="rule.value" label="Giá trị" density="compact" hide-details class="mr-2"></v-text-field>
+                            <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="removeRule(index)"></v-btn>
+                        </div>
+                        <v-btn text @click="addRule" class="mt-2">
+                            <v-icon left>mdi-plus</v-icon>
+                            Thêm quy tắc
+                        </v-btn>
                     </v-form>
                 </v-card-text>
                 <v-card-actions>
@@ -68,29 +80,53 @@ File: src/components/tracking/PixelManager.vue (CẬP NHẬT)
 <script setup>
 import { ref, reactive, computed } from 'vue';
 import { useWebsiteStore } from '@/stores/websiteStore';
+import _ from 'lodash';
 
-const props = defineProps({ websiteId: { type: String, required: true } });
+const props = defineProps({
+  websiteId: { type: String, required: true },
+  platformType: { type: String, default: 'html' }
+});
 const websiteStore = useWebsiteStore();
 
 const headers = [ { title: 'Pixel ID', value: 'pixel_id' }, { title: 'Hành động', value: 'actions', sortable: false, align: 'end' }];
 const dialog = ref(false);
 const deleteDialog = ref(false);
 const form = ref(null);
-const defaultItem = { id: null, pixel_id: '', access_token: '', activation_rules: '[]', tracking_config: '{}' };
-const editedItem = reactive({ ...defaultItem });
+const defaultItem = { id: null, pixel_id: '', access_token: '', activation_rules: [] };
+const editedItem = reactive(_.cloneDeep(defaultItem));
 const itemToDelete = ref(null);
 const isEditMode = computed(() => !!editedItem.id);
 const rules = { required: v => !!v || 'Trường này là bắt buộc.', numeric: v => /^\d+$/.test(v) || 'Pixel ID chỉ được chứa số.' };
 
+// Định nghĩa các loại quy tắc có sẵn cho từng nền tảng
+const ruleTypes = {
+    html: [
+        { title: 'URL chứa', value: 'url_contains' },
+        { title: 'URL không chứa', value: 'url_not_contains' },
+    ],
+    wordpress: [
+        { title: 'URL chứa', value: 'url_contains' },
+        { title: 'Loại trang là', value: 'wp_page_type' },
+        { title: 'Danh mục sản phẩm chứa', value: 'wp_product_category' },
+    ]
+};
+const availableRuleTypes = computed(() => ruleTypes[props.platformType] || ruleTypes.html);
+
+const addRule = () => {
+    if (!Array.isArray(editedItem.activation_rules)) {
+        editedItem.activation_rules = [];
+    }
+    editedItem.activation_rules.push({ type: availableRuleTypes.value[0].value, value: '' });
+};
+const removeRule = (index) => {
+    editedItem.activation_rules.splice(index, 1);
+};
+
 const openDialog = (item) => {
     if (item) {
-        Object.assign(editedItem, {
-            ...item,
-            activation_rules: JSON.stringify(item.activation_rules || [], null, 2),
-            tracking_config: JSON.stringify(item.tracking_config || {}, null, 2),
-        });
+        Object.assign(editedItem, _.cloneDeep(item));
     } else {
-        Object.assign(editedItem, defaultItem);
+        Object.assign(editedItem, _.cloneDeep(defaultItem));
     }
     dialog.value = true;
 };
@@ -103,23 +139,15 @@ const closeDialog = () => {
 const savePixel = async () => {
     const { valid } = await form.value.validate();
     if (!valid) return;
-    try {
-        const payload = {
-            pixel_id: editedItem.pixel_id,
-            access_token: editedItem.access_token,
-            activation_rules: JSON.parse(editedItem.activation_rules),
-            tracking_config: JSON.parse(editedItem.tracking_config),
-        };
-        let success = false;
-        if (isEditMode.value) {
-            success = await websiteStore.updatePixel(props.websiteId, editedItem.id, payload);
-        } else {
-            success = await websiteStore.addPixel(props.websiteId, payload);
-        }
-        if (success) closeDialog();
-    } catch (e) {
-        websiteStore.error = 'Cấu hình JSON không hợp lệ.';
+    
+    const payload = _.cloneDeep(editedItem);
+    let success = false;
+    if (isEditMode.value) {
+        success = await websiteStore.updatePixel(props.websiteId, editedItem.id, payload);
+    } else {
+        success = await websiteStore.addPixel(props.websiteId, payload);
     }
+    if (success) closeDialog();
 };
 
 const openDeleteDialog = (item) => { itemToDelete.value = item; deleteDialog.value = true; };
