@@ -1,8 +1,6 @@
 <template>
   <v-app class="loomsky-mapper-app">
     <div class="mapper-container">
-      <div v-if="highlightedElement" class="highlight-overlay" :style="overlayStyle"></div>
-
       <v-fade-transition>
         <div class="toolbar">
           <v-icon color="white">mdi-cursor-default-click-outline</v-icon>
@@ -32,7 +30,7 @@
               ref="variableSelect"
             ></v-select>
 
-            <v-text-field
+             <v-text-field
               v-model="pageContext"
               label="Ngữ cảnh trang (tùy chọn)"
               placeholder="product_detail, cart_page..."
@@ -42,10 +40,9 @@
             ></v-text-field>
           </v-card-text>
           <v-card-actions class="pa-4">
-            <v-btn text @click="testConnection" color="green">Kiểm tra Kết nối</v-btn>
             <v-spacer></v-spacer>
             <v-btn text @click="closeModal">Hủy</v-btn>
-            <v-btn color="primary" variant="flat" @click="saveMapping" :loading="isSaving">Lưu</v-btn>
+            <v-btn color="primary" variant="flat" @click="saveMapping" :loading="isSaving">11Lưu</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -55,21 +52,20 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-// Giả sử file này tồn tại và hoạt động đúng
 import { generateCssSelector } from '../../utils/selectorGenerator'; 
 
-// --- STATE MANAGEMENT ---
-const highlightedElement = ref(null);
-const overlayStyle = ref({});
+// --- STATE ---
 const isModalOpen = ref(false);
 const isSaving = ref(false);
-
 const selectedSelector = ref('');
 const selectedVariable = ref(null);
 const pageContext = ref('');
-
-// Ref để tương tác với component v-select
 const variableSelect = ref(null);
+
+// --- CÁC BIẾN ĐỂ QUẢN LÝ CÁC PHẦN TỬ ĐỘNG ---
+let suggestionStyleTag = null;
+let highlightOverlayElement = null;
+const suggestionElements = ref([]);
 
 // --- STATIC DATA ---
 const dataVariableOptions = [
@@ -82,23 +78,42 @@ const dataVariableOptions = [
   { title: 'Nút Gửi Form (Button)', value: 'form_submit_button' },
 ];
 
-// --- EVENT HANDLERS ---
-const handleMouseOver = (e) => {
-  if (e.target.closest('#loomsky-mapper-host')) return;
-  highlightedElement.value = e.target;
-  const rect = e.target.getBoundingClientRect();
-  overlayStyle.value = {
-    width: `${rect.width}px`, height: `${rect.height}px`,
-    top: `${rect.top + window.scrollY}px`, left: `${rect.left + window.scrollX}px`,
-  };
-};
+// (MỚI) Định nghĩa CSS sẽ được tiêm vào trang chính
+const suggestionStyles = `
+  .loomsky-interactive-suggestion {
+    border: 4px dashed rgba(22, 163, 74, 0.7) !important;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer !important;
+  }
+  .loomsky-interactive-suggestion:hover {
+    border: 4px dashed rgb(8 104 43 / 70%) !important;
+    box-shadow: 0 0 12px rgba(22, 163, 74, 0.5);
+  }
+`;
 
-const handleClick = (e) => {
-  if (e.target.closest('#loomsky-mapper-host')) return;
-  e.preventDefault();
-  e.stopPropagation();
-  selectedSelector.value = generateCssSelector(e.target);
-  isModalOpen.value = true;
+const findInteractiveElements = () => {
+  console.log('[LOG] ▶️ Bắt đầu hàm `findInteractiveElements`...');
+  const selectors = [
+    'button', 'a[href]', 'input:not([type="hidden"])', '[role="button"]', 
+    '[onclick]', '[data-cy]', '[data-testid]',
+    '.btn', '.button', '.price', '[class*="price"]'
+  ];
+  const selectorString = selectors.join(', ');
+  console.log('[LOG] 🔎 Chuỗi selector được sử dụng:', selectorString);
+  
+  try {
+    const elements = document.querySelectorAll(selectorString);
+    console.log(`[LOG] ✅ QuerySelectorAll thành công. Tìm thấy ${elements.length} phần tử.`);
+    elements.forEach(el => {
+      if (!el.closest('#loomsky-mapper-host')) {
+        el.classList.add('loomsky-interactive-suggestion');
+        suggestionElements.value.push(el);
+      }
+    });
+    console.log(`[LOG] ✨ Đã thêm class cho ${suggestionElements.value.length} phần tử gợi ý.`);
+  } catch (error) {
+    console.error('[LOG] ❌ LỖI QuerySelectorAll:', error);
+  }
 };
 
 // --- MODAL & MAPPER ACTIONS ---
@@ -154,52 +169,93 @@ const closeMapper = () => {
   }
 };
 
-// --- CONNECTION TEST FUNCTIONS ---
-const testConnection = () => {
-  console.log('[MAPPER]: Đang gửi PING đến ứng dụng LoomSky...');
-  if (window.opener && !window.opener.closed) {
-    window.opener.postMessage({ type: 'LOOMSKY_PING_REQUEST' }, '*');
-    console.log('[MAPPER]: Đã gửi PING.');
-  } else {
-    console.error('[MAPPER]: Lỗi nghiêm trọng! Không tìm thấy hoặc cửa sổ gốc đã bị đóng (window.opener is null or closed).');
-    alert('Lỗi: Mất kết nối đến ứng dụng LoomSky!');
+// --- EVENT HANDLERS ---
+const handleMouseOver = (e) => {
+  if (e.target.closest('#loomsky-mapper-host')) {
+    highlightOverlayElement.style.display = 'none';
+    return;
   }
+  
+  const target = e.target.closest('.loomsky-interactive-suggestion') || e.target;
+  const rect = target.getBoundingClientRect();
+
+  highlightOverlayElement.style.display = 'block';
+  highlightOverlayElement.style.width = `${rect.width}px`;
+  highlightOverlayElement.style.height = `${rect.height}px`;
+  highlightOverlayElement.style.top = `${rect.top + window.scrollY}px`;
+  highlightOverlayElement.style.left = `${rect.left + window.scrollX}px`;
 };
 
-const handlePongResponse = (event) => {
-  // Thêm kiểm tra origin để bảo mật trong môi trường production
-  if (event.data.type === 'LOOMSKY_PONG_RESPONSE') {
-    console.log(
-      '%c[MAPPER]: Đã nhận được PONG từ LoomSky! Kết nối 2 chiều thành công!',
-      'color: #03A9F4; font-weight: bold;'
-    );
-    alert('Thành công! Cửa sổ Mapper đã kết nối được với ứng dụng LoomSky.');
+const handleClick = (e) => {
+  console.log('[LOG] 🎯 Click event detected on:', e.target.tagName);
+  const target = e.target.closest('.loomsky-interactive-suggestion') || e.target;
+  if (target.closest('#loomsky-mapper-host')) return;
+  
+  e.preventDefault();
+  e.stopPropagation();
+  
+  if (typeof generateCssSelector !== 'function') {
+      console.error('[LOG] ❌ Không thể tạo selector vì hàm `generateCssSelector` không tồn tại.');
+      return;
   }
+  selectedSelector.value = generateCssSelector(target);
+  isModalOpen.value = true;
 };
+
 
 // --- LIFECYCLE HOOKS ---
 onMounted(() => {
-  console.log('LoomSky Data Mapper: Agent activated on customer page.');
+  // 1. Tiêm style cho Gợi ý (Auto-highlight)
+  suggestionStyleTag = document.createElement('style');
+  suggestionStyleTag.id = 'loomsky-suggestion-styles';
+  suggestionStyleTag.innerHTML = suggestionStyles;
+  document.head.appendChild(suggestionStyleTag);
+
+  // 2. Tạo và tiêm lớp phủ (Hover-highlight)
+  highlightOverlayElement = document.createElement('div');
+  highlightOverlayElement.id = 'loomsky-highlight-overlay';
+  Object.assign(highlightOverlayElement.style, {
+    position: 'absolute',
+    backgroundColor: 'rgba(29, 109, 240, 0.25)',
+    border: '2px solid #1d6df0',
+    borderRadius: '4px',
+    zIndex: '2147483646',
+    pointerEvents: 'none',
+    transition: 'all 0.1s ease-in-out',
+    display: 'none', // Ban đầu ẩn đi
+  });
+  document.body.appendChild(highlightOverlayElement);
+
+  // 3. Lắng nghe sự kiện
   document.addEventListener('mouseover', handleMouseOver);
   document.addEventListener('click', handleClick, true);
-  window.addEventListener('message', handlePongResponse); // Lắng nghe PONG
+  
+  setTimeout(findInteractiveElements, 100);
 });
 
 onUnmounted(() => {
-  console.log('LoomSky Data Mapper: Agent deactivated.');
+  // Dọn dẹp tất cả những gì đã tiêm vào
   document.removeEventListener('mouseover', handleMouseOver);
   document.removeEventListener('click', handleClick, true);
-  window.removeEventListener('message', handlePongResponse); // Dọn dẹp listener
+  
+  if (suggestionStyleTag) suggestionStyleTag.remove();
+  if (highlightOverlayElement) highlightOverlayElement.remove();
+  
+  suggestionElements.value.forEach(el => {
+    if (el) el.classList.remove('loomsky-interactive-suggestion');
+  });
 });
 </script>
 
 <style>
 /* Đảm bảo style của bạn không bị xung đột */
 .loomsky-mapper-app {
-  all: initial; /* Reset tất cả style kế thừa */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  font-size: 16px;
-  line-height: 1.5;
+  background: transparent !important;
+}
+.mapper-container {
+  /* Tạo một điểm gốc cho position và z-index */
+  position: relative;
+  z-index: 2147483645; 
 }
 .toolbar {
   position: fixed;
@@ -210,22 +266,32 @@ onUnmounted(() => {
   color: white;
   padding: 12px 20px;
   border-radius: 999px;
-  z-index: 2147483647;
+  z-index: 2147483647; /* Z-index cao nhất */
   font-size: 14px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.4);
   display: flex;
   align-items: center;
   gap: 8px;
+
+  /* Ép trình duyệt tạo một rendering layer mới cho toolbar */
+  will-change: transform;
+  transform: translateX(-50%) translateZ(1px); 
 }
+
 .highlight-overlay {
   position: absolute;
-  background-color: rgba(0, 116, 186, 0.25);
-  border: 2px solid #0074ba;
+  background-color: rgba(29, 109, 240, 0.25);
+  border: 2px solid #1d6df0;
   border-radius: 4px;
-  z-index: 2147483646;
+  z-index: 2147483646; /* Z-index cao, ngay dưới toolbar */
   pointer-events: none;
   transition: all 0.1s ease-in-out;
+
+  /* Ép trình duyệt tạo một rendering layer mới cho lớp phủ */
+  will-change: transform, width, height;
+  transform: translateZ(0); 
 }
+
 .selector-code {
   background-color: #e5e7eb;
   color: #1f2937;
@@ -235,5 +301,17 @@ onUnmounted(() => {
   white-space: pre-wrap;
   word-break: break-all;
   font-family: monospace;
+}
+.loomsky-interactive-suggestion {
+  outline: 4px dashed rgba(22, 163, 74, 0.7) !important;
+  outline-offset: 2px;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer !important;
+}
+
+.loomsky-interactive-suggestion:hover {
+  outline-style: solid;
+  outline-color: rgba(22, 163, 74, 1);
+  box-shadow: 0 0 12px rgba(22, 163, 74, 0.5);
 }
 </style>
