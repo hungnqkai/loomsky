@@ -28,6 +28,23 @@ const updateWebsiteSchema = {
     }).min(1), // Yêu cầu ít nhất một trường để cập nhật
 };
 
+// --- DATA MAPPING SCHEMAS (MỚI) ---
+const createDataMappingSchema = {
+    ...paramsWebsiteId,
+    body: Joi.object({
+        variable_name: Joi.string().min(3).max(50).required(),
+        selector: Joi.string().min(1).max(1000).required(),
+        page_context: Joi.string().min(3).max(50).optional().allow(null, ''),
+    }),
+};
+
+const deleteDataMappingSchema = {
+    params: Joi.object({
+        websiteId: Joi.string().uuid().required(),
+        mapId: Joi.string().uuid().required(),
+    }),
+};
+
 const createPixelSchema = {
     ...paramsWebsiteId,
     body: Joi.object({
@@ -87,6 +104,8 @@ module.exports = {
     deleteWebsiteSchema: paramsWebsiteId,
     createWebsiteSchema,
     updateWebsiteSchema,
+    createDataMappingSchema,
+    deleteDataMappingSchema,
     createPixelSchema,
     updatePixelSchema,
     deletePixelSchema: { params: Joi.object({ websiteId: Joi.string().uuid().required(), pixelId: Joi.string().uuid().required() }) },

@@ -65,6 +65,40 @@ const websiteController = {
         res.status(200).json({ success: true, message: 'Website deleted successfully.' });
     })],
 
+    // === DATA MAPPING CONTROLLERS (MỚI) ===
+    getDataMappings: [checkWebsiteOwnership, asyncHandler(async (req, res) => {
+        const mappings = await models.DataMapping.findAll({
+            where: { website_id: req.params.websiteId },
+            order: [['created_at', 'DESC']]
+        });
+        res.status(200).json({ success: true, data: mappings });
+    })],
+
+    addDataMapping: [checkWebsiteOwnership, asyncHandler(async (req, res) => {
+        const { variable_name, selector, page_context } = req.body;
+        const mapping = await models.DataMapping.create({
+            website_id: req.params.websiteId,
+            variable_name,
+            selector,
+            page_context
+        });
+        res.status(201).json({ success: true, data: mapping });
+    })],
+
+    deleteDataMapping: [checkWebsiteOwnership, asyncHandler(async (req, res) => {
+        const { mapId } = req.params;
+        const mapping = await models.DataMapping.findOne({
+            where: { id: mapId, website_id: req.website.id }
+        });
+
+        if (!mapping) {
+            throw new AppError('Data mapping not found.', 404);
+        }
+
+        await mapping.destroy();
+        res.status(200).json({ success: true, message: 'Data mapping deleted successfully.' });
+    })],
+
     // === PIXEL CONTROLLERS ===
     addPixel: [checkWebsiteOwnership, asyncHandler(async (req, res) => {
         const { pixel_id, access_token, activation_rules, tracking_config } = req.body;

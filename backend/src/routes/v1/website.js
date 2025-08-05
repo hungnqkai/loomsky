@@ -25,6 +25,14 @@ router.route('/:websiteId')
   .put(validate(websiteValidators.updateWebsiteSchema), websiteController.updateWebsite)
   .delete(validate(websiteValidators.deleteWebsiteSchema), websiteController.deleteWebsite);
 
+// --- Routes cho Data Mappings (MỚI) ---
+router.route('/:websiteId/datamaps')
+  .get(validate(websiteValidators.getWebsiteSchema), websiteController.getDataMappings)
+  .post(validate(websiteValidators.createDataMappingSchema), websiteController.addDataMapping);
+
+router.route('/:websiteId/datamaps/:mapId')
+  .delete(validate(websiteValidators.deleteDataMappingSchema), websiteController.deleteDataMapping);
+
 // --- Routes cho Pixels (thuộc một Website) ---
 router.route('/:websiteId/pixels')
   .post(validate(websiteValidators.createPixelSchema), websiteController.addPixel)

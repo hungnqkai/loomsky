@@ -52,7 +52,12 @@ var LoomSkySDK = function() {
       this.config = config;
       this.identity = identity;
     }
-    process(eventName, eventData) {
+    /**
+     * @param {string} eventName - Tên sự kiện.
+     * @param {object} eventData - Dữ liệu sự kiện tùy chỉnh.
+     * @param {object} collectedData - Dữ liệu được thu thập tự động từ DataCollector.
+     */
+    process(eventName, eventData, collectedData = {}) {
       var _a, _b, _c, _d, _e, _f;
       console.log(`LoomSky SDK: Processing event "${eventName}"...`);
       const planAllowsBlacklist = ((_c = (_b = (_a = this.config.planFeatures) == null ? void 0 : _a.tracking) == null ? void 0 : _b.blacklist) == null ? void 0 : _c.enabled) === true;
@@ -65,7 +70,7 @@ var LoomSkySDK = function() {
         console.log(`LoomSky SDK: Event did not pass event filters. Skipping.`);
         return null;
       }
-      const payload = this.buildPayload(eventName, eventData);
+      const payload = this.buildPayload(eventName, eventData, collectedData);
       console.log(`LoomSky SDK: Event "${eventName}" passed all checks.`, { payload });
       return payload;
     }
@@ -84,25 +89,33 @@ var LoomSkySDK = function() {
       if (filters.length === 0) return true;
       return true;
     }
-    buildPayload(eventName, eventData) {
-      var _a, _b, _c, _d;
+    buildPayload(eventName, eventData, collectedData) {
+      var _a;
+      const dataLayer = window.loomskyDataLayer || {};
       return {
         eventName,
         properties: {
           context: {
             page_url: window.location.href,
             page_title: document.title,
-            platform: ((_a = window.loomskyDataLayer) == null ? void 0 : _a.platform) || "unknown"
+            platform: dataLayer.platform || "unknown",
+            // (MỚI) Đính kèm dữ liệu đã thu thập vào context
+            mapped_data: collectedData
           },
           user: {
             ls_user_id: this.identity.userId,
-            authenticated_user_id: ((_c = (_b = window.loomskyDataLayer) == null ? void 0 : _b.user) == null ? void 0 : _c.wp_user_id) || null
+            authenticated_user_id: ((_a = dataLayer.user) == null ? void 0 : _a.wp_user_id) || null
           },
           facebook: {
             fbp: CookieManager.get("_fbp"),
             fbc: CookieManager.get("_fbc")
           },
-          ecommerce: ((_d = window.loomskyDataLayer) == null ? void 0 : _d.ecommerce) || {},
+          // Hợp nhất dữ liệu từ nhiều nguồn: dataLayer, dữ liệu tùy chỉnh, và dữ liệu thu thập
+          ecommerce: {
+            ...dataLayer.ecommerce,
+            ...collectedData
+            // Có thể ghi đè dataLayer nếu cần
+          },
           ...eventData
         },
         sessionId: this.identity.sessionId,
@@ -183,25 +196,81 @@ var LoomSkySDK = function() {
       });
     }
   }
+  class DataCollector {
+    /**
+     * @param {Array<object>} mappings - Mảng các đối tượng DataMapping từ API config.
+     */
+    constructor(mappings = []) {
+      this.mappings = mappings;
+      this.collectedData = {};
+    }
+    /**
+     * Trích xuất nội dung từ một phần tử DOM.
+     * Ưu tiên value (cho input), sau đó đến innerText.
+     * @param {HTMLElement} element - Phần tử DOM.
+     * @returns {string|null}
+     * @private
+     */
+    _extractValue(element) {
+      if (!element) return null;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName)) {
+        return element.value;
+      }
+      return element.innerText ? element.innerText.trim() : null;
+    }
+    /**
+     * Quét toàn bộ trang và thu thập tất cả dữ liệu dựa trên các ánh xạ đã cung cấp.
+     * @returns {object} - Một đối tượng chứa dữ liệu đã thu thập.
+     */
+    collectAll() {
+      if (!this.mappings || this.mappings.length === 0) {
+        return {};
+      }
+      console.log("LoomSky SDK: Collecting data based on mappings...");
+      this.collectedData = {};
+      this.mappings.forEach((mapping) => {
+        try {
+          const element = document.querySelector(mapping.selector);
+          if (element) {
+            const value = this._extractValue(element);
+            if (value) {
+              this.collectedData[mapping.variable_name] = value;
+            }
+          }
+        } catch (error) {
+          console.warn(`LoomSky SDK: Invalid selector "${mapping.selector}" for variable "${mapping.variable_name}".`, error);
+        }
+      });
+      console.log("LoomSky SDK: Data collected.", this.collectedData);
+      return this.collectedData;
+    }
+  }
   class EventListener {
     constructor(apiService) {
       this.api = apiService;
       this.processor = null;
       this.pixelManager = null;
+      this.dataCollector = null;
+      this.collectedData = {};
     }
     start(config, identity) {
       this.processor = new EventProcessor(config, identity);
       this.pixelManager = new PixelManager(this.api);
+      this.dataCollector = new DataCollector(config.dataMappings);
       console.log("LoomSky SDK: EventListener started.");
       this.pixelManager.injectPixels(config.pixels);
-      if (document.readyState === "complete") {
+      const onPageReady = () => {
+        this.collectedData = this.dataCollector.collectAll();
         this.handleEvent("PageView");
+      };
+      if (document.readyState === "complete") {
+        onPageReady();
       } else {
-        window.addEventListener("load", () => this.handleEvent("PageView"));
+        window.addEventListener("load", onPageReady);
       }
     }
     handleEvent(eventName, eventData = {}) {
-      const processedPayload = this.processor.process(eventName, eventData);
+      const processedPayload = this.processor.process(eventName, eventData, this.collectedData);
       if (processedPayload) {
         this.pixelManager.track(eventName, processedPayload);
       }
@@ -248,42 +317,148 @@ var LoomSkySDK = function() {
         console.error("LoomSky SDK: Error sending event to backend.", error);
       }
     }
+    /**
+     * (MỚI) Gửi setup_token lên backend để xác thực.
+     * @param {string} token - Token lấy từ URL parameter.
+     * @returns {Promise<object|null>} - Dữ liệu xác thực hoặc null nếu thất bại.
+     */
+    async verifySetupToken(token) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/sdk/verify-setup`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ token })
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        return result.data;
+      } catch (error) {
+        console.error("LoomSky SDK: Failed to verify setup token.", error);
+        return null;
+      }
+    }
+  }
+  const MAPPER_ASSETS_BASE_URL = "https://cdn.loomsky.net/dist";
+  class MapperLoader {
+    constructor(apiService) {
+      this.api = apiService;
+    }
+    /**
+     * Bắt đầu quá trình kích hoạt Mapper.
+     * @param {string} token - Setup token từ URL.
+     */
+    async activate(token) {
+      console.log("LoomSky SDK: Activating Mapper Mode...");
+      const verification = await this.api.verifySetupToken(token);
+      if (!verification || !verification.websiteId) {
+        console.error("LoomSky SDK: Mapper activation failed. Invalid token.");
+        return;
+      }
+      console.log("LoomSky SDK: Setup token verified. Injecting Mapper Agent from CDN...");
+      try {
+        await this._mountApp({ websiteId: verification.websiteId });
+        console.log("LoomSky SDK: Mapper Agent injected and mounted successfully.");
+      } catch (error) {
+        console.error("LoomSky SDK: Failed to load Mapper Agent.", error);
+      }
+    }
+    /**
+     * Tải động file JS của mini-app.
+     * @private
+     */
+    _injectScript() {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = `${MAPPER_ASSETS_BASE_URL}/mapper.js`;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+    /**
+     * Tạo Shadow DOM, chèn assets và mount ứng dụng Vue vào đó.
+     * @param {object} options - Dữ liệu cần truyền vào mini-app.
+     * @private
+     */
+    async _mountApp(options) {
+      await this._injectScript();
+      if (typeof window.mountDataMapperApp !== "function") {
+        console.error("LoomSky SDK: Mapper mount function not found.");
+        return;
+      }
+      const hostElement = document.createElement("div");
+      hostElement.id = "loomsky-mapper-host";
+      document.body.appendChild(hostElement);
+      const shadowRoot = hostElement.attachShadow({ mode: "open" });
+      await new Promise((resolve, reject) => {
+        const cssLink = document.createElement("link");
+        cssLink.rel = "stylesheet";
+        cssLink.href = `${MAPPER_ASSETS_BASE_URL}/mapper.css`;
+        cssLink.onload = resolve;
+        cssLink.onerror = reject;
+        shadowRoot.appendChild(cssLink);
+      });
+      const appMountPoint = document.createElement("div");
+      shadowRoot.appendChild(appMountPoint);
+      window.mountDataMapperApp(appMountPoint, {
+        ...options,
+        api: this.api
+      });
+    }
   }
   class Core {
     constructor() {
       console.log("LoomSky SDK: Core initializing...");
       this.apiKey = this.getApiKey();
-      this.config = null;
       if (this.apiKey) {
         this.api = new ApiService(this.apiKey);
-        this.identity = new Identity();
-        this.eventListener = new EventListener(this.api);
       }
     }
     getApiKey() {
       var _a;
       return ((_a = document.currentScript) == null ? void 0 : _a.getAttribute("data-api-key")) || null;
     }
-    async fetchConfig() {
-      if (!this.api) return;
-      console.log(`LoomSky SDK: Fetching config for API Key: ${this.apiKey}`);
-      this.config = await this.api.getConfig();
-      if (this.config) {
-        console.log("LoomSky SDK: Configuration loaded successfully.", this.config);
-      }
+    /**
+     * Lấy các tham số thiết lập từ URL.
+     * @returns {{isSetupMode: boolean, token: string|null}}
+     */
+    getSetupParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return {
+        isSetupMode: urlParams.get("ls_setup_mode") === "true",
+        token: urlParams.get("ls_token")
+      };
     }
+    /**
+     * Điểm khởi đầu của SDK.
+     */
     async start() {
       if (!this.apiKey) {
         console.error("LoomSky SDK: API Key is missing. SDK will not start.");
         return;
       }
-      console.log("LoomSky SDK: Starting...");
-      await this.fetchConfig();
-      if (this.config) {
-        this.eventListener.start(this.config, this.identity);
-        console.log("LoomSky SDK: Started successfully.");
+      const setupParams = this.getSetupParams();
+      if (setupParams.isSetupMode) {
+        const mapperLoader = new MapperLoader(this.api);
+        await mapperLoader.activate(setupParams.token);
       } else {
-        console.error("LoomSky SDK: Could not load configuration. SDK is disabled.");
+        console.log("LoomSky SDK: Starting normal tracking...");
+        const config = await this.api.getConfig();
+        if (config) {
+          console.log("LoomSky SDK: Configuration loaded successfully.", config);
+          const identity = new Identity();
+          const eventListener = new EventListener(this.api);
+          eventListener.start(config, identity);
+          console.log("LoomSky SDK: Started successfully.");
+        } else {
+          console.error("LoomSky SDK: Could not load configuration. SDK is disabled.");
+        }
       }
     }
   }

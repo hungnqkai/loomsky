@@ -25,6 +25,9 @@ module.exports = (sequelize, DataTypes) => {
       Website.hasMany(models.Session, {
         foreignKey: 'website_id',
       });
+      Website.hasMany(models.DataMapping, {
+        foreignKey: 'website_id',
+      });
     }
   }
   Website.init({

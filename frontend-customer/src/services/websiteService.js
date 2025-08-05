@@ -12,6 +12,14 @@ const websiteService = {
   updateWebsite: (websiteId, data) => api.put(`/websites/${websiteId}`, data),
   deleteWebsite: (websiteId) => api.delete(`/websites/${websiteId}`),
 
+  // === Data Mappings (MỚI) ===
+  getDataMappings: (websiteId) => api.get(`/websites/${websiteId}/datamaps`),
+  addDataMapping: (websiteId, data) => api.post(`/websites/${websiteId}/datamaps`, data),
+  deleteDataMapping: (websiteId, mapId) => api.delete(`/websites/${websiteId}/datamaps/${mapId}`),
+
+  // === Setup Session (MỚI) ===
+  initSetupSession: (websiteId) => api.post('/sdk/init-setup', { websiteId }),
+
   // === Pixels ===
   getPixels: (websiteId) => api.get(`/websites/${websiteId}/pixels`),
   addPixel: (websiteId, data) => api.post(`/websites/${websiteId}/pixels`, data),

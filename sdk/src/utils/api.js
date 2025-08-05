@@ -47,6 +47,32 @@ class ApiService {
             console.error('LoomSky SDK: Error sending event to backend.', error);
         }
     }
+
+    /**
+     * (MỚI) Gửi setup_token lên backend để xác thực.
+     * @param {string} token - Token lấy từ URL parameter.
+     * @returns {Promise<object|null>} - Dữ liệu xác thực hoặc null nếu thất bại.
+     */
+    async verifySetupToken(token) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/sdk/verify-setup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token }),
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            const result = await response.json();
+            return result.data; // Trả về { websiteId: '...' }
+        } catch (error) {
+            console.error('LoomSky SDK: Failed to verify setup token.', error);
+            return null;
+        }
+    }
 }
 
 export default ApiService;

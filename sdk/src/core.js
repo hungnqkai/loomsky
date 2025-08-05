@@ -1,21 +1,19 @@
 /*
 File: sdk/src/core.js (CẬP NHẬT)
-- Truyền ApiService vào EventListener.
+- Tách biệt logic: Chạy chế độ tracking thông thường hoặc kích hoạt Mapper Mode.
 */
 import Identity from './modules/identity';
 import EventListener from './modules/eventListener';
 import ApiService from './utils/api';
+import MapperLoader from './modules/mapperLoader'; // Import module mới
 
 class Core {
     constructor() {
         console.log('LoomSky SDK: Core initializing...');
         this.apiKey = this.getApiKey();
-        this.config = null;
         
         if (this.apiKey) {
             this.api = new ApiService(this.apiKey);
-            this.identity = new Identity();
-            this.eventListener = new EventListener(this.api); // Truyền api service vào
         }
     }
 
@@ -23,29 +21,47 @@ class Core {
         return document.currentScript?.getAttribute('data-api-key') || null;
     }
 
-    async fetchConfig() {
-        if (!this.api) return;
-        console.log(`LoomSky SDK: Fetching config for API Key: ${this.apiKey}`);
-        this.config = await this.api.getConfig();
-        if (this.config) {
-            console.log('LoomSky SDK: Configuration loaded successfully.', this.config);
-        }
+    /**
+     * Lấy các tham số thiết lập từ URL.
+     * @returns {{isSetupMode: boolean, token: string|null}}
+     */
+    getSetupParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return {
+            isSetupMode: urlParams.get('ls_setup_mode') === 'true',
+            token: urlParams.get('ls_token')
+        };
     }
 
+    /**
+     * Điểm khởi đầu của SDK.
+     */
     async start() {
         if (!this.apiKey) {
             console.error('LoomSky SDK: API Key is missing. SDK will not start.');
             return;
         }
-        
-        console.log('LoomSky SDK: Starting...');
-        await this.fetchConfig();
-        
-        if (this.config) {
-            this.eventListener.start(this.config, this.identity);
-            console.log('LoomSky SDK: Started successfully.');
+
+        const setupParams = this.getSetupParams();
+
+        if (setupParams.isSetupMode) {
+            // Chạy chế độ thiết lập
+            const mapperLoader = new MapperLoader(this.api);
+            await mapperLoader.activate(setupParams.token);
         } else {
-            console.error('LoomSky SDK: Could not load configuration. SDK is disabled.');
+            // Chạy chế độ tracking thông thường
+            console.log('LoomSky SDK: Starting normal tracking...');
+            const config = await this.api.getConfig();
+            
+            if (config) {
+                console.log('LoomSky SDK: Configuration loaded successfully.', config);
+                const identity = new Identity();
+                const eventListener = new EventListener(this.api);
+                eventListener.start(config, identity);
+                console.log('LoomSky SDK: Started successfully.');
+            } else {
+                console.error('LoomSky SDK: Could not load configuration. SDK is disabled.');
+            }
         }
     }
 }

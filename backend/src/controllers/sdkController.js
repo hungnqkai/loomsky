@@ -6,8 +6,76 @@ File: src/controllers/sdkController.js (CẬP NHẬT)
 const { models } = require('../database');
 const asyncHandler = require('../middleware/asyncHandler');
 const AppError = require('../utils/AppError');
+const { redisUtils } = require('../config/redis'); // Import redis utils
+const { v4: uuidv4 } = require('uuid'); // Import UUID for token generation
 
 const sdkController = {
+
+    /**
+     * @desc    (MỚI) Khởi tạo một phiên thiết lập và trả về token
+     * @route   POST /api/v1/sdk/init-setup
+     * @access  Private (Yêu cầu đăng nhập)
+     */
+    initSetupSession: asyncHandler(async (req, res) => {
+        const { websiteId } = req.body;
+        const clientId = req.user.client_id;
+
+        // Kiểm tra website có thuộc sở hữu của client không
+        const website = await models.Website.findOne({ where: { id: websiteId, client_id: clientId } });
+        if (!website) {
+            throw new AppError('Website not found or you do not have permission.', 404);
+        }
+
+        // Tạo token duy nhất, dùng một lần
+        const token = uuidv4();
+        const redisKey = `setup_token:${token}`;
+        const tokenData = {
+            websiteId: website.id,
+            clientId: clientId,
+            userId: req.user.id,
+        };
+        const fiveMinutesInSeconds = 5 * 60;
+
+        // Lưu token vào Redis với thời gian hết hạn là 5 phút
+        await redisUtils.setex(redisKey, fiveMinutesInSeconds, tokenData);
+
+        res.status(200).json({
+            success: true,
+            message: 'Setup session initialized.',
+            data: {
+                setup_token: token,
+            },
+        });
+    }),
+
+    /**
+     * @desc    (MỚI) Xác thực setup_token từ SDK
+     * @route   POST /api/v1/sdk/verify-setup
+     * @access  Public (SDK gọi)
+     */
+    verifySetupSession: asyncHandler(async (req, res) => {
+        const { token } = req.body;
+        const redisKey = `setup_token:${token}`;
+
+        // Lấy dữ liệu từ Redis
+        const tokenData = await redisUtils.get(redisKey);
+
+        if (!tokenData) {
+            throw new AppError('Invalid or expired setup token.', 401);
+        }
+
+        // Xóa token ngay sau khi sử dụng để đảm bảo nó chỉ được dùng một lần
+        await redisUtils.del(redisKey);
+
+        res.status(200).json({
+            success: true,
+            message: 'Token verified successfully.',
+            data: {
+                websiteId: tokenData.websiteId,
+            },
+        });
+    }),
+    
     verifyApiKey: asyncHandler(async (req, res) => {
         const { apiKey } = req.body;
         const website = await models.Website.findOne({ where: { api_key: apiKey } });
@@ -40,6 +108,7 @@ const sdkController = {
                 { model: models.Pixel },
                 { model: models.EventFilter },
                 { model: models.Blacklist },
+                { model: models.DataMapping },
                 {
                     model: models.Client,
                     attributes: ['id'],
@@ -70,6 +139,7 @@ const sdkController = {
             pixels: website.Pixels || [],
             eventFilters: website.EventFilters || [],
             blacklist: website.Blacklist || [],
+            dataMappings: website.DataMappings || [],
         };
 
         res.status(200).json({ success: true, data: config });

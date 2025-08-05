@@ -54,6 +54,7 @@ const models = {
   Blacklist: require('./Blacklist')(sequelize, Sequelize.DataTypes),
   Session: require('./Session')(sequelize, Sequelize.DataTypes),
   Event: require('./Event')(sequelize, Sequelize.DataTypes),
+  DataMapping: require('./DataMapping')(sequelize, Sequelize.DataTypes),
 };
 
 // Set up associations

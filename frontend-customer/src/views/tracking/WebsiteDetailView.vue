@@ -16,6 +16,7 @@ File: src/views/tracking/WebsiteDetailView.vue (CẬP NHẬT)
 
       <v-tabs v-model="tab" bg-color="primary" class="mb-4">
         <v-tab value="setup">Hướng dẫn Cài đặt</v-tab>
+        <v-tab value="datamaps">Ánh xạ Dữ liệu</v-tab>
         <v-tab value="pixels">Quản lý Pixels</v-tab>
         <v-tab value="events">Sự kiện & Chuyển đổi</v-tab>
         <v-tab value="filters">Bộ lọc Sự kiện</v-tab>
@@ -43,6 +44,11 @@ File: src/views/tracking/WebsiteDetailView.vue (CẬP NHẬT)
               </div>
             </v-card-text>
           </v-card>
+        </v-window-item>
+
+        <!-- (MỚI) Thêm Window Item cho Data Mapper -->
+        <v-window-item value="datamaps">
+          <data-mapper-manager :website-id="id" />
         </v-window-item>
 
         <v-window-item value="pixels">
@@ -78,6 +84,7 @@ import PixelManager from '@/components/tracking/PixelManager.vue';
 import EventManager from '@/components/tracking/EventManager.vue';
 import EventFilterManager from '@/components/tracking/EventFilterManager.vue';
 import BlacklistManager from '@/components/tracking/BlacklistManager.vue';
+import DataMapperManager from '@/components/tracking/DataMapperManager.vue';
 
 const props = defineProps({
   id: { type: String, required: true },

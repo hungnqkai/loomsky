@@ -13,6 +13,7 @@ export const useWebsiteStore = defineStore('website', () => {
   const pixels = ref([]);
   const eventFilters = ref([]);
   const blacklist = ref([]);
+  const dataMappings = ref([]);
   const loading = ref(false);
   const actionLoading = ref(false); // Loading riêng cho các hành động nhỏ
   const error = ref(null);
@@ -61,11 +62,12 @@ export const useWebsiteStore = defineStore('website', () => {
     try {
       const response = await websiteService.getWebsiteById(websiteId);
       currentWebsite.value = response.data.data;
-      // Tải song song các dữ liệu con
+      // Tải song song tất cả dữ liệu con
       await Promise.all([
         fetchPixels(websiteId),
         fetchEventFilters(websiteId),
-        fetchBlacklist(websiteId)
+        fetchBlacklist(websiteId),
+        fetchDataMappings(websiteId) // (MỚI)
       ]);
     } catch (err) {
       error.value = err.response?.data?.error || 'Không tìm thấy website.';
@@ -88,6 +90,64 @@ export const useWebsiteStore = defineStore('website', () => {
         return false;
     } finally {
         actionLoading.value = false;
+    }
+  }
+
+  // === Data Mapping Actions (MỚI) ===
+  async function fetchDataMappings(websiteId) {
+    try {
+      const response = await websiteService.getDataMappings(websiteId);
+      dataMappings.value = response.data.data;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Không thể tải Data Mappings.';
+    }
+  }
+
+  async function initSetupSession(websiteId) {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      const response = await websiteService.initSetupSession(websiteId);
+      return response.data.data.setup_token;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Không thể khởi tạo phiên thiết lập.';
+      return null;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
+  async function addDataMapping(websiteId, mappingData) {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      // Dữ liệu đã chứa websiteId, chỉ cần truyền data
+      const response = await websiteService.addDataMapping(websiteId, mappingData);
+      dataMappings.value.unshift(response.data.data);
+      successMessage.value = `Ánh xạ cho "${mappingData.variable_name}" đã được lưu!`;
+      return true;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Lưu ánh xạ thất bại.';
+      return false;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
+   async function deleteDataMapping(websiteId, mapId) {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      await websiteService.deleteDataMapping(websiteId, mapId);
+      const index = dataMappings.value.findIndex(m => m.id === mapId);
+      if (index > -1) dataMappings.value.splice(index, 1);
+      successMessage.value = 'Xóa ánh xạ thành công!';
+      return true;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Xóa ánh xạ thất bại.';
+      return false;
+    } finally {
+      actionLoading.value = false;
     }
   }
 
@@ -243,6 +303,6 @@ export const useWebsiteStore = defineStore('website', () => {
     clearMessages, fetchWebsites, createWebsite, fetchWebsiteById, deleteWebsite,
     fetchPixels, addPixel, updatePixel, deletePixel,
     fetchEventFilters, addEventFilter, deleteEventFilter,
-    fetchBlacklist, addBlacklistEntry, deleteBlacklistEntry,
+    fetchBlacklist, addBlacklistEntry, deleteBlacklistEntry, fetchDataMappings, initSetupSession, addDataMapping, deleteDataMapping
   };
 });

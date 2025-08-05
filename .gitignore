@@ -13,3 +13,7 @@
 /backend/node_modules
 /backend/package-lock.json
 /backend/.env
+
+# SDK
+/sdk/node_modules
+/sdk/package-lock.json

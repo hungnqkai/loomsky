@@ -1,6 +1,6 @@
 /*
 File: sdk/src/modules/eventProcessor.js (CẬP NHẬT)
-- Thêm import cho CookieManager.
+- Bổ sung logic để đính kèm dữ liệu được thu thập tự động vào payload sự kiện.
 */
 import CookieManager from '../utils/cookies';
 
@@ -10,11 +10,13 @@ class EventProcessor {
         this.identity = identity;
     }
 
-    process(eventName, eventData) {
+    /**
+     * @param {string} eventName - Tên sự kiện.
+     * @param {object} eventData - Dữ liệu sự kiện tùy chỉnh.
+     * @param {object} collectedData - Dữ liệu được thu thập tự động từ DataCollector.
+     */
+    process(eventName, eventData, collectedData = {}) {
         console.log(`LoomSky SDK: Processing event "${eventName}"...`);
-
-        // Lớp 3: Kiểm tra sự kiện có được bật hay không (kiểm tra trên từng pixel)
-        // Logic này sẽ được tích hợp trong PixelManager sau khi có cấu hình tracking_config hoàn chỉnh
 
         // Lớp 4: Kiểm tra Blacklist & Quyền
         const planAllowsBlacklist = this.config.planFeatures?.tracking?.blacklist?.enabled === true;
@@ -30,7 +32,8 @@ class EventProcessor {
              return null;
         }
         
-        const payload = this.buildPayload(eventName, eventData);
+        // (CẬP NHẬT) Truyền collectedData vào hàm buildPayload
+        const payload = this.buildPayload(eventName, eventData, collectedData);
         console.log(`LoomSky SDK: Event "${eventName}" passed all checks.`, { payload });
         return payload;
     }
@@ -43,7 +46,6 @@ class EventProcessor {
             if (entry.type === 'user_id' && entry.value === this.identity.userId) {
                 return true;
             }
-            // Logic kiểm tra IP sẽ cần gọi API ngoài hoặc có sẵn
             return false;
         });
     }
@@ -51,28 +53,34 @@ class EventProcessor {
     passEventFilters(eventName, eventData) {
         const filters = this.config.eventFilters.filter(f => f.event_name === eventName);
         if (filters.length === 0) return true;
-        // Logic kiểm tra các rule trong filter sẽ được thêm ở đây
         return true;
     }
 
-    buildPayload(eventName, eventData) {
+    buildPayload(eventName, eventData, collectedData) {
+        const dataLayer = window.loomskyDataLayer || {};
         return {
             eventName,
             properties: {
                 context: {
                     page_url: window.location.href,
                     page_title: document.title,
-                    platform: window.loomskyDataLayer?.platform || 'unknown',
+                    platform: dataLayer.platform || 'unknown',
+                    // (MỚI) Đính kèm dữ liệu đã thu thập vào context
+                    mapped_data: collectedData 
                 },
                 user: {
                     ls_user_id: this.identity.userId,
-                    authenticated_user_id: window.loomskyDataLayer?.user?.wp_user_id || null,
+                    authenticated_user_id: dataLayer.user?.wp_user_id || null,
                 },
                 facebook: {
                     fbp: CookieManager.get('_fbp'),
                     fbc: CookieManager.get('_fbc'),
                 },
-                ecommerce: window.loomskyDataLayer?.ecommerce || {},
+                // Hợp nhất dữ liệu từ nhiều nguồn: dataLayer, dữ liệu tùy chỉnh, và dữ liệu thu thập
+                ecommerce: {
+                    ...dataLayer.ecommerce,
+                    ...collectedData, // Có thể ghi đè dataLayer nếu cần
+                },
                 ...eventData,
             },
             sessionId: this.identity.sessionId,
