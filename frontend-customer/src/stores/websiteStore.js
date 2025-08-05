@@ -118,21 +118,29 @@ export const useWebsiteStore = defineStore('website', () => {
   }
 
   async function addDataMapping(websiteId, mappingData) {
-    actionLoading.value = true;
-    clearMessages();
-    try {
-      // Dữ liệu đã chứa websiteId, chỉ cần truyền data
-      const response = await websiteService.addDataMapping(websiteId, mappingData);
-      dataMappings.value.unshift(response.data.data);
-      successMessage.value = `Ánh xạ cho "${mappingData.variable_name}" đã được lưu!`;
-      return true;
-    } catch (err) {
-      error.value = err.response?.data?.error || 'Lưu ánh xạ thất bại.';
-      return false;
-    } finally {
-      actionLoading.value = false;
+    if (!websiteId || !mappingData) {
+        console.error('Lỗi store: websiteId hoặc mappingData bị thiếu.');
+        return;
+      }
+      
+      try {
+        // Gọi đến service và truyền cả hai tham số
+        const newMapping = await websiteService.addDataMapping(websiteId, mappingData);
+        
+        console.log('Lưu mapping thành công từ store, dữ liệu trả về:', newMapping);
+        
+        // (Tùy chọn) Thêm logic để cập nhật state, ví dụ:
+        // if (this.currentWebsite && this.currentWebsite.DataMappings) {
+        //   this.currentWebsite.DataMappings.push(newMapping);
+        // }
+        
+        return newMapping;
+      } catch (error) {
+        console.error('Lỗi trong action addDataMapping:', error);
+        // Ném lỗi ra để component có thể bắt được
+        throw error;
+      }
     }
-  }
 
    async function deleteDataMapping(websiteId, mapId) {
     actionLoading.value = true;

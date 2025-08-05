@@ -1,7 +1,7 @@
 /**
  * Module này chịu trách nhiệm kích hoạt, tải và mount ứng dụng Visual Data Mapper.
  */
-const MAPPER_ASSETS_BASE_URL = 'https://cdn.loomsky.net/dist'; 
+const MAPPER_ASSETS_BASE_URL = 'http://localhost:5173/dist'; 
 
 class MapperLoader {
     constructor(apiService) {

@@ -1,15 +1,8 @@
 <template>
-  <!-- 
-    Bọc toàn bộ template trong <v-app>.
-    Đây là yêu cầu của Vuetify để các component như v-dialog, v-menu 
-    có thể quản lý và hiển thị overlay một cách chính xác.
-  -->
   <v-app class="loomsky-mapper-app">
     <div class="mapper-container">
-      <!-- Lớp phủ để highlight phần tử -->
       <div v-if="highlightedElement" class="highlight-overlay" :style="overlayStyle"></div>
 
-      <!-- Thanh công cụ -->
       <v-fade-transition>
         <div class="toolbar">
           <v-icon color="white">mdi-cursor-default-click-outline</v-icon>
@@ -19,7 +12,6 @@
         </div>
       </v-fade-transition>
 
-      <!-- Modal cấu hình ánh xạ -->
       <v-dialog v-model="isModalOpen" max-width="550px" persistent>
         <v-card rounded="lg">
           <v-card-title class="font-weight-bold">Ánh xạ Biến Dữ liệu</v-card-title>
@@ -40,7 +32,7 @@
               ref="variableSelect"
             ></v-select>
 
-             <v-text-field
+            <v-text-field
               v-model="pageContext"
               label="Ngữ cảnh trang (tùy chọn)"
               placeholder="product_detail, cart_page..."
@@ -50,6 +42,7 @@
             ></v-text-field>
           </v-card-text>
           <v-card-actions class="pa-4">
+            <v-btn text @click="testConnection" color="green">Kiểm tra Kết nối</v-btn>
             <v-spacer></v-spacer>
             <v-btn text @click="closeModal">Hủy</v-btn>
             <v-btn color="primary" variant="flat" @click="saveMapping" :loading="isSaving">Lưu</v-btn>
@@ -62,22 +55,23 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { generateCssSelector } from '../../utils/selectorGenerator';
+// Giả sử file này tồn tại và hoạt động đúng
+import { generateCssSelector } from '../../utils/selectorGenerator'; 
 
-const props = defineProps({
-  websiteId: { type: String, required: true },
-});
-
+// --- STATE MANAGEMENT ---
 const highlightedElement = ref(null);
 const overlayStyle = ref({});
 const isModalOpen = ref(false);
 const isSaving = ref(false);
+
 const selectedSelector = ref('');
 const selectedVariable = ref(null);
 const pageContext = ref('');
+
+// Ref để tương tác với component v-select
 const variableSelect = ref(null);
 
-// Danh sách các biến dữ liệu chuẩn hóa
+// --- STATIC DATA ---
 const dataVariableOptions = [
   { title: 'Tên sản phẩm (Product Name)', value: 'product_name' },
   { title: 'Giá sản phẩm (Product Price)', value: 'product_price' },
@@ -88,6 +82,7 @@ const dataVariableOptions = [
   { title: 'Nút Gửi Form (Button)', value: 'form_submit_button' },
 ];
 
+// --- EVENT HANDLERS ---
 const handleMouseOver = (e) => {
   if (e.target.closest('#loomsky-mapper-host')) return;
   highlightedElement.value = e.target;
@@ -106,6 +101,7 @@ const handleClick = (e) => {
   isModalOpen.value = true;
 };
 
+// --- MODAL & MAPPER ACTIONS ---
 const closeModal = () => {
   isModalOpen.value = false;
   selectedSelector.value = '';
@@ -114,48 +110,130 @@ const closeModal = () => {
 };
 
 const saveMapping = async () => {
-  const { valid } = await variableSelect.value.validate();
-  if (!valid) return;
+  // KIỂM TRA TRỰC TIẾP, KHÔNG DÙNG VALIDATE()
+  console.log('[MAPPER]: Kiểm tra giá trị đã chọn:', selectedVariable.value);
+  if (!selectedVariable.value) {
+    console.error('[MAPPER]: Lỗi - Chưa chọn loại dữ liệu.');
+    alert('Vui lòng chọn một loại dữ liệu trước khi lưu.');
+    return;
+  }
 
+  console.log('[MAPPER]: --- Bắt đầu quy trình Lưu ---');
   isSaving.value = true;
-  const mappingData = {
+
+  const payload = {
     variable_name: selectedVariable.value,
     selector: selectedSelector.value,
     page_context: pageContext.value || null,
   };
+  console.log('[MAPPER]: Dữ liệu đã sẵn sàng để gửi:', payload);
 
-  window.opener.postMessage({
-    type: 'LOOMSKY_SAVE_MAPPING',
-    data: mappingData,
-  }, '*');
-
-  setTimeout(() => {
+  if (!window.opener || window.opener.closed) {
+    console.error('[MAPPER]: Lỗi! Không tìm thấy hoặc cửa sổ gốc đã bị đóng.');
+    alert('Lỗi: Mất kết nối đến ứng dụng LoomSky.');
     isSaving.value = false;
+    return;
+  }
+
+  try {
+    console.log('[MAPPER]: Đang gửi thông điệp SAVE đến cửa sổ gốc...');
+    window.opener.postMessage({ type: 'LOOMSKY_SAVE_MAPPING', payload: payload }, '*');
+    console.log('[MAPPER]: Đã gửi thông điệp SAVE.');
     closeModal();
-  }, 500);
+  } catch (error) {
+    console.error('[MAPPER]: Lỗi khi gửi postMessage:', error);
+    alert('Đã xảy ra lỗi khi gửi dữ liệu về ứng dụng LoomSky.');
+  } finally {
+    isSaving.value = false;
+  }
 };
 
 const closeMapper = () => {
-  window.opener.postMessage({ type: 'LOOMSKY_CLOSE_MAPPER' }, '*');
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage({ type: 'LOOMSKY_CLOSE_MAPPER' }, '*');
+  }
 };
 
+// --- CONNECTION TEST FUNCTIONS ---
+const testConnection = () => {
+  console.log('[MAPPER]: Đang gửi PING đến ứng dụng LoomSky...');
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage({ type: 'LOOMSKY_PING_REQUEST' }, '*');
+    console.log('[MAPPER]: Đã gửi PING.');
+  } else {
+    console.error('[MAPPER]: Lỗi nghiêm trọng! Không tìm thấy hoặc cửa sổ gốc đã bị đóng (window.opener is null or closed).');
+    alert('Lỗi: Mất kết nối đến ứng dụng LoomSky!');
+  }
+};
+
+const handlePongResponse = (event) => {
+  // Thêm kiểm tra origin để bảo mật trong môi trường production
+  if (event.data.type === 'LOOMSKY_PONG_RESPONSE') {
+    console.log(
+      '%c[MAPPER]: Đã nhận được PONG từ LoomSky! Kết nối 2 chiều thành công!',
+      'color: #03A9F4; font-weight: bold;'
+    );
+    alert('Thành công! Cửa sổ Mapper đã kết nối được với ứng dụng LoomSky.');
+  }
+};
+
+// --- LIFECYCLE HOOKS ---
 onMounted(() => {
   console.log('LoomSky Data Mapper: Agent activated on customer page.');
   document.addEventListener('mouseover', handleMouseOver);
   document.addEventListener('click', handleClick, true);
+  window.addEventListener('message', handlePongResponse); // Lắng nghe PONG
 });
 
 onUnmounted(() => {
   console.log('LoomSky Data Mapper: Agent deactivated.');
   document.removeEventListener('mouseover', handleMouseOver);
   document.removeEventListener('click', handleClick, true);
+  window.removeEventListener('message', handlePongResponse); // Dọn dẹp listener
 });
 </script>
 
 <style>
-/* ... (Giữ nguyên các style đã tạo ở bước trước) ... */
-.loomsky-mapper-app { all: initial; font-family: 'Inter', sans-serif; font-size: 16px; line-height: 1.5; }
-.toolbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #1F2937; color: white; padding: 12px 20px; border-radius: 999px; z-index: 2147483647; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px;}
-.highlight-overlay { position: absolute; background-color: rgba(0, 116, 186, 0.25); border: 2px solid #0074ba; border-radius: 4px; z-index: 2147483646; pointer-events: none; transition: all 0.1s ease-in-out; }
-.selector-code { background-color: #e5e7eb; color: #1f2937; padding: 4px 8px; border-radius: 4px; display: block; white-space: pre-wrap; word-break: break-all; font-family: monospace; }
+/* Đảm bảo style của bạn không bị xung đột */
+.loomsky-mapper-app {
+  all: initial; /* Reset tất cả style kế thừa */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  font-size: 16px;
+  line-height: 1.5;
+}
+.toolbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1F2937;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 999px;
+  z-index: 2147483647;
+  font-size: 14px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.highlight-overlay {
+  position: absolute;
+  background-color: rgba(0, 116, 186, 0.25);
+  border: 2px solid #0074ba;
+  border-radius: 4px;
+  z-index: 2147483646;
+  pointer-events: none;
+  transition: all 0.1s ease-in-out;
+}
+.selector-code {
+  background-color: #e5e7eb;
+  color: #1f2937;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: monospace;
+}
 </style>

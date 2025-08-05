@@ -1,26 +1,22 @@
+// File: frontend-customer/src/mapper.js (MỚI - ĐÃ SỬA LỖI)
+
 import { createApp } from 'vue';
 import DataMapper from './components/mapper/DataMapper.vue';
 
-// --- (MỚI) Import các thành phần cần thiết để tạo instance Vuetify tùy chỉnh ---
+// ĐIỂM KHÁC BIỆT 1: Import trực tiếp các hàm tạo của Vuetify
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
-// Không cần import style ở đây vì nó được chèn qua thẻ <link>
 
-/**
- * Hàm này sẽ được SDK gọi để khởi chạy "Tác Nhân Nội Bộ".
- * @param {HTMLElement} appMountPoint - Điểm mount bên trong Shadow DOM.
- * @param {object} options - Các tùy chọn từ SDK (websiteId, api...).
- */
 function mountDataMapperApp(appMountPoint, options = {}) {
-  // --- (MỚI) Tạo một instance Vuetify tùy chỉnh ---
+  // ĐIỂM KHÁC BIỆT 2: Tạo một instance Vuetify mới và tùy chỉnh
   const vuetify = createVuetify({
     components,
     directives,
-    // --- ĐÂY LÀ PHẦN SỬA LỖI QUAN TRỌNG NHẤT ---
-    // Buộc tất cả các component động của Vuetify (dialog, menu, tooltip)
-    // phải được chèn vào bên trong điểm mount của chúng ta (trong Shadow DOM),
-    // thay vì chèn vào document.body của trang khách hàng.
+    // ĐIỂM KHÁC BIỆT 3 (QUAN TRỌNG NHẤT):
+    // Dòng này ra lệnh cho Vuetify: "Tất cả các thành phần động như
+    // dialog, menu, v.v., phải được gắn vào 'appMountPoint' 
+    // (tức là Shadow DOM), chứ không phải document.body nữa."
     defaults: {
       global: {
         attach: appMountPoint,
@@ -32,11 +28,10 @@ function mountDataMapperApp(appMountPoint, options = {}) {
     ...options
   });
   
-  // Sử dụng instance Vuetify tùy chỉnh của chúng ta
+  // Sử dụng instance Vuetify vừa được tạo riêng cho Mapper
   app.use(vuetify);
   
   app.mount(appMountPoint);
 }
 
-// Expose hàm mount ra window để SDK có thể tìm và gọi nó.
 window.mountDataMapperApp = mountDataMapperApp;

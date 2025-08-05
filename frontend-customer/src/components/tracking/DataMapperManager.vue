@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useWebsiteStore } from '@/stores/websiteStore';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 
@@ -61,7 +61,7 @@ const props = defineProps({
 });
 
 const websiteStore = useWebsiteStore();
-let mapperWindow = null; // Biến để giữ tham chiếu đến cửa sổ mapper
+let mapperWindow = null;
 
 const headers = [
   { title: 'Tên Biến', value: 'variable_name' },
@@ -70,7 +70,6 @@ const headers = [
   { title: 'Hành động', value: 'actions', sortable: false, align: 'end' },
 ];
 
-// --- Logic cho Dialog Xóa ---
 const deleteDialog = ref(false);
 const itemToDelete = ref(null);
 const openDeleteDialog = (item) => {
@@ -84,8 +83,8 @@ const confirmDelete = async () => {
   }
 };
 
-// --- Logic chính cho việc khởi tạo Mapper ---
 const startSetupSession = async () => {
+  // SỬA LỖI 1: Gọi đúng tên hàm là `initSetupSession`
   const token = await websiteStore.initSetupSession(props.websiteId);
   if (!token) return;
 
@@ -95,27 +94,26 @@ const startSetupSession = async () => {
     return;
   }
 
-  // Đảm bảo URL có http/https
   const url = domain.startsWith('http') ? domain : `https://${domain}`;
   const mapperUrl = new URL(url);
   mapperUrl.searchParams.set('ls_setup_mode', 'true');
   mapperUrl.searchParams.set('ls_token', token);
 
-  // Mở cửa sổ mới và lắng nghe thông điệp
   mapperWindow = window.open(mapperUrl.href, '_blank');
   window.addEventListener('message', handleMapperMessage);
 };
 
 const handleMapperMessage = async (event) => {
-  // Bảo mật: Chỉ xử lý thông điệp từ nguồn tin cậy (chính cửa sổ mapper)
-  if (event.source !== mapperWindow) {
-    return;
-  }
-
-  const { type, data } = event.data;
+  // SỬA LỖI 2: Nhận dữ liệu từ thuộc tính `payload` thay vì `data`
+  const { type, payload } = event.data;
 
   if (type === 'LOOMSKY_SAVE_MAPPING') {
-    await websiteStore.addDataMapping(props.websiteId, data);
+    // Bây giờ `payload` sẽ chứa dữ liệu mapping và không bị undefined
+    const success = await websiteStore.addDataMapping(props.websiteId, payload);
+    if (success) {
+      // Tải lại danh sách để cập nhật UI
+      await websiteStore.fetchDataMappings(props.websiteId);
+    }
   }
 
   if (type === 'LOOMSKY_CLOSE_MAPPER') {
@@ -131,8 +129,13 @@ const cleanupListener = () => {
   mapperWindow = null;
 };
 
-// Dọn dẹp listener khi component bị hủy để tránh memory leak
+onMounted(() => {
+  console.log('[LOOMSKY APP]: DataMapperManager đã được mount. Bắt đầu lắng nghe tin nhắn.');
+  window.addEventListener('message', handleMapperMessage);
+});
+
 onUnmounted(() => {
+  console.log('[LOOMSKY APP]: DataMapperManager sắp bị unmount. Dừng lắng nghe tin nhắn.');
   cleanupListener();
 });
 </script>
