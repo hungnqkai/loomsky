@@ -280,8 +280,12 @@ var LoomSkySDK = function() {
   class ApiService {
     constructor(apiKey) {
       this.apiKey = apiKey;
+      this.configCache = null;
     }
     async getConfig() {
+      if (this.configCache) {
+        return this.configCache;
+      }
       try {
         const response = await fetch(`${API_BASE_URL}/sdk/config?apiKey=${this.apiKey}`);
         if (!response.ok) {
@@ -289,11 +293,43 @@ var LoomSkySDK = function() {
           throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-        return result.data;
+        this.configCache = result.data;
+        return this.configCache;
       } catch (error) {
         console.error("LoomSky SDK: Failed to fetch configuration.", error);
         return null;
       }
+    }
+    /**
+     * (MỚI) Gửi setup_token lên backend để xác thực.
+     * @param {string} token - Token lấy từ URL parameter.
+     * @returns {Promise<object|null>} - Dữ liệu xác thực hoặc null nếu thất bại.
+     */
+    async verifySetupToken(token) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/sdk/verify-setup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        return result.data;
+      } catch (error) {
+        console.error("LoomSky SDK: Failed to verify setup token.", error);
+        return null;
+      }
+    }
+    /**
+     * (MỚI) Lấy về danh sách dataMappings từ config đã được cache.
+     * @returns {Promise<Array|null>}
+     */
+    async getDataMappings() {
+      const config = await this.getConfig();
+      return config ? config.dataMappings : null;
     }
     async trackEvent(payload) {
       try {
@@ -317,42 +353,12 @@ var LoomSkySDK = function() {
         console.error("LoomSky SDK: Error sending event to backend.", error);
       }
     }
-    /**
-     * (MỚI) Gửi setup_token lên backend để xác thực.
-     * @param {string} token - Token lấy từ URL parameter.
-     * @returns {Promise<object|null>} - Dữ liệu xác thực hoặc null nếu thất bại.
-     */
-    async verifySetupToken(token) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/sdk/verify-setup`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ token })
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        return result.data;
-      } catch (error) {
-        console.error("LoomSky SDK: Failed to verify setup token.", error);
-        return null;
-      }
-    }
   }
   const MAPPER_ASSETS_BASE_URL = "http://localhost:5173/dist";
   class MapperLoader {
     constructor(apiService) {
       this.api = apiService;
     }
-    /**
-     * Bắt đầu quá trình kích hoạt Mapper.
-     * @param {{token: string, fromSession: boolean}} setupState - Trạng thái thiết lập từ core.
-     * @returns {Promise<boolean>} - Trả về true nếu thành công, false nếu thất bại.
-     */
     async activate(setupState) {
       let verification = null;
       if (setupState.fromSession) {
@@ -368,18 +374,16 @@ var LoomSkySDK = function() {
       }
       console.log("LoomSky SDK: Token accepted. Injecting Mapper Agent...");
       try {
-        await this._mountApp({ websiteId: verification.websiteId });
-        console.log("LoomSky SDK: Mapper Agent injected and mounted successfully.");
+        await this._mountApp({
+          websiteId: verification.websiteId,
+          api: this.api
+        });
         return true;
       } catch (error) {
         console.error("LoomSky SDK: Failed to load Mapper Agent.", error);
         return false;
       }
     }
-    /**
-     * Tải động file JS của mini-app.
-     * @private
-     */
     _injectScript() {
       return new Promise((resolve, reject) => {
         const script = document.createElement("script");
@@ -391,20 +395,16 @@ var LoomSkySDK = function() {
       });
     }
     /**
-     * Tạo Shadow DOM, chèn assets và mount ứng dụng Vue vào đó.
+     * (CẬP NHẬT) Tạo Shadow DOM, chèn assets và mount ứng dụng Vue vào đó.
      * @param {object} options - Dữ liệu cần truyền vào mini-app.
      * @private
      */
     async _mountApp(options) {
-      await this._injectScript();
-      if (typeof window.mountDataMapperApp !== "function") {
-        console.error("LoomSky SDK: Mapper mount function not found.");
-        return;
-      }
       const hostElement = document.createElement("div");
       hostElement.id = "loomsky-mapper-host";
       document.body.appendChild(hostElement);
       const shadowRoot = hostElement.attachShadow({ mode: "open" });
+      const appMountPoint = document.createElement("div");
       await new Promise((resolve, reject) => {
         const cssLink = document.createElement("link");
         cssLink.rel = "stylesheet";
@@ -413,12 +413,14 @@ var LoomSkySDK = function() {
         cssLink.onerror = reject;
         shadowRoot.appendChild(cssLink);
       });
-      const appMountPoint = document.createElement("div");
+      console.log("LoomSky SDK: Mapper CSS loaded successfully.");
+      await this._injectScript();
+      console.log("LoomSky SDK: Mapper JS loaded successfully.");
+      if (typeof window.mountDataMapperApp !== "function") {
+        throw new Error("LoomSky SDK: Mapper mount function not found.");
+      }
       shadowRoot.appendChild(appMountPoint);
-      window.mountDataMapperApp(appMountPoint, {
-        ...options,
-        api: this.api
-      });
+      window.mountDataMapperApp(appMountPoint, options);
     }
   }
   const SESSION_STORAGE_KEY = "loomskySetupSession";

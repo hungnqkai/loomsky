@@ -63,21 +63,14 @@ class MapperLoader {
      * @private
      */
     async _mountApp(options) {
-        // Tải script trước để hàm mountDataMapperApp sẵn sàng
-        await this._injectScript();
-
-        if (typeof window.mountDataMapperApp !== 'function') {
-            console.error('LoomSky SDK: Mapper mount function not found.');
-            return;
-        }
-
         const hostElement = document.createElement('div');
         hostElement.id = 'loomsky-mapper-host';
         document.body.appendChild(hostElement);
 
         const shadowRoot = hostElement.attachShadow({ mode: 'open' });
+        const appMountPoint = document.createElement('div');
         
-        // Chờ cho file CSS được tải xong hoàn toàn trước khi tiếp tục
+        // SỬA LỖI: Tải CSS trước và chờ cho nó tải xong
         await new Promise((resolve, reject) => {
             const cssLink = document.createElement('link');
             cssLink.rel = 'stylesheet';
@@ -86,15 +79,20 @@ class MapperLoader {
             cssLink.onerror = reject; // Báo lỗi nếu không tải được CSS
             shadowRoot.appendChild(cssLink);
         });
+        
+        console.log('LoomSky SDK: Mapper CSS loaded successfully.');
 
-        // Bây giờ CSS đã sẵn sàng, chúng ta có thể an toàn mount ứng dụng
-        const appMountPoint = document.createElement('div');
+        // Sau khi CSS đã sẵn sàng, mới tải JS
+        await this._injectScript();
+        console.log('LoomSky SDK: Mapper JS loaded successfully.');
+
+        if (typeof window.mountDataMapperApp !== 'function') {
+            throw new Error('LoomSky SDK: Mapper mount function not found.');
+        }
+        
+        // Cuối cùng, mount ứng dụng Vue
         shadowRoot.appendChild(appMountPoint);
-
-        window.mountDataMapperApp(appMountPoint, {
-            ...options,
-            api: this.api
-        });
+        window.mountDataMapperApp(appMountPoint, options);
     }
 }
 
