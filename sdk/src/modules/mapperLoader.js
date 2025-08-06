@@ -10,23 +10,35 @@ class MapperLoader {
 
     /**
      * Bắt đầu quá trình kích hoạt Mapper.
-     * @param {string} token - Setup token từ URL.
+     * @param {{token: string, fromSession: boolean}} setupState - Trạng thái thiết lập từ core.
+     * @returns {Promise<boolean>} - Trả về true nếu thành công, false nếu thất bại.
      */
-    async activate(token) {
-        console.log('LoomSky SDK: Activating Mapper Mode...');
-        const verification = await this.api.verifySetupToken(token);
+    async activate(setupState) {
+        let verification = null;
 
-        if (!verification || !verification.websiteId) {
-            console.error('LoomSky SDK: Mapper activation failed. Invalid token.');
-            return;
+        // (MỚI) Chỉ gọi API xác thực nếu không phải từ session
+        if (setupState.fromSession) {
+            console.log('LoomSky SDK: Activating from session, skipping token verification.');
+            // Giả lập một đối tượng verification thành công
+            verification = { success: true, websiteId: 'session-activated' }; 
+        } else {
+            console.log('LoomSky SDK: Activating from URL, verifying token...');
+            verification = await this.api.verifySetupToken(setupState.token);
         }
 
-        console.log('LoomSky SDK: Setup token verified. Injecting Mapper Agent from CDN...');
+        if (!verification) {
+            console.error('LoomSky SDK: Mapper activation failed. Invalid token.');
+            return false;
+        }
+
+        console.log('LoomSky SDK: Token accepted. Injecting Mapper Agent...');
         try {
             await this._mountApp({ websiteId: verification.websiteId });
             console.log('LoomSky SDK: Mapper Agent injected and mounted successfully.');
+            return true;
         } catch (error) {
             console.error('LoomSky SDK: Failed to load Mapper Agent.', error);
+            return false;
         }
     }
 

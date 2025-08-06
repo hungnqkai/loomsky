@@ -20,6 +20,7 @@
       <v-alert v-if="websiteStore.successMessage" type="success" class="mb-4" closable @click:close="websiteStore.clearMessages()">{{ websiteStore.successMessage }}</v-alert>
 
       <v-data-table
+        v-if="!websiteStore.loading"
         :headers="headers"
         :items="websiteStore.dataMappings"
         :loading="websiteStore.loading"
@@ -70,6 +71,7 @@ const headers = [
   { title: 'Hành động', value: 'actions', sortable: false, align: 'end' },
 ];
 
+// --- Logic Dialog Xóa (Giữ nguyên) ---
 const deleteDialog = ref(false);
 const itemToDelete = ref(null);
 const openDeleteDialog = (item) => {
@@ -83,8 +85,8 @@ const confirmDelete = async () => {
   }
 };
 
+// --- Logic Mapper (Giữ nguyên) ---
 const startSetupSession = async () => {
-  // SỬA LỖI 1: Gọi đúng tên hàm là `initSetupSession`
   const token = await websiteStore.initSetupSession(props.websiteId);
   if (!token) return;
 
@@ -104,22 +106,18 @@ const startSetupSession = async () => {
 };
 
 const handleMapperMessage = async (event) => {
-  // SỬA LỖI 2: Nhận dữ liệu từ thuộc tính `payload` thay vì `data`
   const { type, payload } = event.data;
 
   if (type === 'LOOMSKY_SAVE_MAPPING') {
-    // Bây giờ `payload` sẽ chứa dữ liệu mapping và không bị undefined
     const success = await websiteStore.addDataMapping(props.websiteId, payload);
     if (success) {
-      // Tải lại danh sách để cập nhật UI
+      console.log('[LOOMSKY APP]: Lưu thành công, đang tải lại danh sách...');
       await websiteStore.fetchDataMappings(props.websiteId);
     }
   }
 
   if (type === 'LOOMSKY_CLOSE_MAPPER') {
-    if (mapperWindow) {
-      mapperWindow.close();
-    }
+    if (mapperWindow) mapperWindow.close();
     cleanupListener();
   }
 };
@@ -129,13 +127,19 @@ const cleanupListener = () => {
   mapperWindow = null;
 };
 
+// --- SỬA LỖI: Cập nhật onMounted và onUnmounted ---
 onMounted(() => {
-  console.log('[LOOMSKY APP]: DataMapperManager đã được mount. Bắt đầu lắng nghe tin nhắn.');
+  console.log('[LOOMSKY APP]: DataMapperManager đã được mount.');
+  
+  // SỬA LỖI: Thêm dòng này để tải dữ liệu ngay khi component được hiển thị
+  websiteStore.fetchDataMappings(props.websiteId);
+  
+  // Thêm listener cho mapper
   window.addEventListener('message', handleMapperMessage);
 });
 
 onUnmounted(() => {
-  console.log('[LOOMSKY APP]: DataMapperManager sắp bị unmount. Dừng lắng nghe tin nhắn.');
+  console.log('[LOOMSKY APP]: DataMapperManager sắp bị unmount.');
   cleanupListener();
 });
 </script>

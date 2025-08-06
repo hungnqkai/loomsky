@@ -311,6 +311,6 @@ export const useWebsiteStore = defineStore('website', () => {
     clearMessages, fetchWebsites, createWebsite, fetchWebsiteById, deleteWebsite,
     fetchPixels, addPixel, updatePixel, deletePixel,
     fetchEventFilters, addEventFilter, deleteEventFilter,
-    fetchBlacklist, addBlacklistEntry, deleteBlacklistEntry, fetchDataMappings, initSetupSession, addDataMapping, deleteDataMapping
+    fetchBlacklist, addBlacklistEntry, deleteBlacklistEntry, dataMappings, fetchDataMappings, initSetupSession, addDataMapping, deleteDataMapping
   };
 });

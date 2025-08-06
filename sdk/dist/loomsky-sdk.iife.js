@@ -350,21 +350,30 @@ var LoomSkySDK = function() {
     }
     /**
      * Bắt đầu quá trình kích hoạt Mapper.
-     * @param {string} token - Setup token từ URL.
+     * @param {{token: string, fromSession: boolean}} setupState - Trạng thái thiết lập từ core.
+     * @returns {Promise<boolean>} - Trả về true nếu thành công, false nếu thất bại.
      */
-    async activate(token) {
-      console.log("LoomSky SDK: Activating Mapper Mode...");
-      const verification = await this.api.verifySetupToken(token);
-      if (!verification || !verification.websiteId) {
-        console.error("LoomSky SDK: Mapper activation failed. Invalid token.");
-        return;
+    async activate(setupState) {
+      let verification = null;
+      if (setupState.fromSession) {
+        console.log("LoomSky SDK: Activating from session, skipping token verification.");
+        verification = { success: true, websiteId: "session-activated" };
+      } else {
+        console.log("LoomSky SDK: Activating from URL, verifying token...");
+        verification = await this.api.verifySetupToken(setupState.token);
       }
-      console.log("LoomSky SDK: Setup token verified. Injecting Mapper Agent from CDN...");
+      if (!verification) {
+        console.error("LoomSky SDK: Mapper activation failed. Invalid token.");
+        return false;
+      }
+      console.log("LoomSky SDK: Token accepted. Injecting Mapper Agent...");
       try {
         await this._mountApp({ websiteId: verification.websiteId });
         console.log("LoomSky SDK: Mapper Agent injected and mounted successfully.");
+        return true;
       } catch (error) {
         console.error("LoomSky SDK: Failed to load Mapper Agent.", error);
+        return false;
       }
     }
     /**
@@ -412,6 +421,7 @@ var LoomSkySDK = function() {
       });
     }
   }
+  const SESSION_STORAGE_KEY = "loomskySetupSession";
   class Core {
     constructor() {
       console.log("LoomSky SDK: Core initializing...");
@@ -425,28 +435,56 @@ var LoomSkySDK = function() {
       return ((_a = document.currentScript) == null ? void 0 : _a.getAttribute("data-api-key")) || null;
     }
     /**
-     * Lấy các tham số thiết lập từ URL.
+     * (CẬP NHẬT) Lấy trạng thái thiết lập từ sessionStorage hoặc URL.
      * @returns {{isSetupMode: boolean, token: string|null}}
      */
-    getSetupParams() {
+    getSetupState() {
+      try {
+        const sessionData = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_KEY));
+        if (sessionData && sessionData.isActive && sessionData.token) {
+          console.log("LoomSky SDK: Found active setup session in sessionStorage.");
+          return { isSetupMode: true, token: sessionData.token, fromSession: true };
+        }
+      } catch (e) {
+      }
       const urlParams = new URLSearchParams(window.location.search);
-      return {
-        isSetupMode: urlParams.get("ls_setup_mode") === "true",
-        token: urlParams.get("ls_token")
-      };
+      const isUrlMode = urlParams.get("ls_setup_mode") === "true";
+      const urlToken = urlParams.get("ls_token");
+      if (isUrlMode && urlToken) {
+        console.log("LoomSky SDK: Found setup params in URL.");
+        return { isSetupMode: true, token: urlToken, fromSession: false };
+      }
+      return { isSetupMode: false, token: null };
     }
     /**
      * Điểm khởi đầu của SDK.
      */
     async start() {
       if (!this.apiKey) {
-        console.error("LoomSky SDK: API Key is missing. SDK will not start.");
         return;
       }
-      const setupParams = this.getSetupParams();
-      if (setupParams.isSetupMode) {
+      const setupState = this.getSetupState();
+      if (setupState.isSetupMode) {
+        console.log("LoomSky SDK: Activating Mapper Mode...");
         const mapperLoader = new MapperLoader(this.api);
-        await mapperLoader.activate(setupParams.token);
+        const isActivated = await mapperLoader.activate(setupState);
+        if (isActivated && !setupState.fromSession) {
+          const sessionData = { isActive: true, token: setupState.token };
+          sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
+          console.log("LoomSky SDK: Setup session saved.");
+        }
+        if (isActivated) {
+          window.addEventListener("message", (event) => {
+            var _a;
+            if (((_a = event.data) == null ? void 0 : _a.type) === "LOOMSKY_CLOSE_MAPPER") {
+              console.log("LoomSky SDK: Closing setup session.");
+              sessionStorage.removeItem(SESSION_STORAGE_KEY);
+            }
+          });
+        } else if (!setupState.fromSession) {
+          console.log("LoomSky SDK: Invalid token from URL, clearing session.");
+          sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        }
       } else {
         console.log("LoomSky SDK: Starting normal tracking...");
         const config = await this.api.getConfig();

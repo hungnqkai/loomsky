@@ -3,8 +3,21 @@
     <div class="mapper-container">
       <v-fade-transition>
         <div class="toolbar">
-          <v-icon color="white">mdi-cursor-default-click-outline</v-icon>
-          <span class="ml-3 font-weight-medium">Chế độ Chọn Phần tử</span>
+          <v-tooltip :text="isNavigateMode ? 'Chuyển sang Chế độ Chọn' : 'Chuyển sang Chế độ Điều hướng'">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                v-bind="props"
+                :icon="isNavigateMode ? 'mdi-cursor-default' : 'mdi-cursor-default-click-outline'"
+                variant="text"
+                @click="toggleMode"
+              ></v-btn>
+            </template>
+          </v-tooltip>
+          
+          <span class="ml-2 font-weight-medium">
+            {{ isNavigateMode ? 'Chế độ Điều hướng' : 'Chế độ Chọn Phần tử' }}
+          </span>
+          
           <v-spacer></v-spacer>
           <v-btn size="small" variant="outlined" @click="closeMapper">Hoàn tất</v-btn>
         </div>
@@ -16,7 +29,6 @@
           <v-card-text>
             <p class="text-body-2 mb-2"><strong>Phần tử đã chọn:</strong></p>
             <code class="selector-code">{{ selectedSelector }}</code>
-            
             <v-select
               v-model="selectedVariable"
               label="Chọn loại dữ liệu tương ứng"
@@ -29,20 +41,22 @@
               :rules="[v => !!v || 'Vui lòng chọn một loại dữ liệu']"
               ref="variableSelect"
             ></v-select>
-
-             <v-text-field
+             <v-select
               v-model="pageContext"
-              label="Ngữ cảnh trang (tùy chọn)"
-              placeholder="product_detail, cart_page..."
+              label="Chọn ngữ cảnh trang (tùy chọn)"
+              :items="pageContextOptions"
+              item-title="title"
+              item-value="value"
               variant="outlined"
               density="compact"
+              clearable
               hint="Chỉ áp dụng ánh xạ này trên một loại trang cụ thể."
-            ></v-text-field>
+            ></v-select>
           </v-card-text>
           <v-card-actions class="pa-4">
             <v-spacer></v-spacer>
             <v-btn text @click="closeModal">Hủy</v-btn>
-            <v-btn color="primary" variant="flat" @click="saveMapping" :loading="isSaving">11Lưu</v-btn>
+            <v-btn color="primary" variant="flat" @click="saveMapping" :loading="isSaving">Lưu</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -55,6 +69,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { generateCssSelector } from '../../utils/selectorGenerator'; 
 
 // --- STATE ---
+const isNavigateMode = ref(false); // Mặc định là Chế độ Chọn
 const isModalOpen = ref(false);
 const isSaving = ref(false);
 const selectedSelector = ref('');
@@ -76,6 +91,14 @@ const dataVariableOptions = [
   { title: 'Nút Mua ngay (Button)', value: 'buy_now_button' },
   { title: 'Trường nhập Email (Input)', value: 'email_input' },
   { title: 'Nút Gửi Form (Button)', value: 'form_submit_button' },
+];
+
+const pageContextOptions = [
+  { title: 'Trang sản phẩm (Product page)', value: 'product_page' },
+  { title: 'Danh mục sản phẩm (Product category)', value: 'product_category' },
+  { title: 'Trang tĩnh (Page)', value: 'page' },
+  { title: 'Chi tiết bài viết (Blog detail)', value: 'blog_detail' },
+  { title: 'Danh mục bài viết (Blog category)', value: 'blog_category' },
 ];
 
 // (MỚI) Định nghĩa CSS sẽ được tiêm vào trang chính
@@ -113,6 +136,15 @@ const findInteractiveElements = () => {
     console.log(`[LOG] ✨ Đã thêm class cho ${suggestionElements.value.length} phần tử gợi ý.`);
   } catch (error) {
     console.error('[LOG] ❌ LỖI QuerySelectorAll:', error);
+  }
+};
+
+// --- (MỚI) Hàm chuyển đổi chế độ ---
+const toggleMode = () => {
+  isNavigateMode.value = !isNavigateMode.value;
+  // Nếu chuyển sang chế độ điều hướng, ẩn lớp phủ đi
+  if (isNavigateMode.value && highlightOverlayElement) {
+    highlightOverlayElement.style.display = 'none';
   }
 };
 
@@ -171,6 +203,9 @@ const closeMapper = () => {
 
 // --- EVENT HANDLERS ---
 const handleMouseOver = (e) => {
+  // Chỉ hiện highlight khi ở Chế độ Chọn
+  if (isNavigateMode.value) return;
+  
   if (e.target.closest('#loomsky-mapper-host')) {
     highlightOverlayElement.style.display = 'none';
     return;
@@ -186,18 +221,18 @@ const handleMouseOver = (e) => {
   highlightOverlayElement.style.left = `${rect.left + window.scrollX}px`;
 };
 
+
 const handleClick = (e) => {
-  console.log('[LOG] 🎯 Click event detected on:', e.target.tagName);
+  // Chỉ xử lý click khi ở Chế độ Chọn
+  if (isNavigateMode.value) return;
+  
   const target = e.target.closest('.loomsky-interactive-suggestion') || e.target;
   if (target.closest('#loomsky-mapper-host')) return;
   
+  // Ngăn chặn chuyển trang chỉ khi ở Chế độ Chọn
   e.preventDefault();
   e.stopPropagation();
   
-  if (typeof generateCssSelector !== 'function') {
-      console.error('[LOG] ❌ Không thể tạo selector vì hàm `generateCssSelector` không tồn tại.');
-      return;
-  }
   selectedSelector.value = generateCssSelector(target);
   isModalOpen.value = true;
 };
@@ -252,11 +287,6 @@ onUnmounted(() => {
 .loomsky-mapper-app {
   background: transparent !important;
 }
-.mapper-container {
-  /* Tạo một điểm gốc cho position và z-index */
-  position: relative;
-  z-index: 2147483645; 
-}
 .toolbar {
   position: fixed;
   bottom: 20px;
@@ -278,20 +308,6 @@ onUnmounted(() => {
   transform: translateX(-50%) translateZ(1px); 
 }
 
-.highlight-overlay {
-  position: absolute;
-  background-color: rgba(29, 109, 240, 0.25);
-  border: 2px solid #1d6df0;
-  border-radius: 4px;
-  z-index: 2147483646; /* Z-index cao, ngay dưới toolbar */
-  pointer-events: none;
-  transition: all 0.1s ease-in-out;
-
-  /* Ép trình duyệt tạo một rendering layer mới cho lớp phủ */
-  will-change: transform, width, height;
-  transform: translateZ(0); 
-}
-
 .selector-code {
   background-color: #e5e7eb;
   color: #1f2937;
@@ -302,16 +318,8 @@ onUnmounted(() => {
   word-break: break-all;
   font-family: monospace;
 }
-.loomsky-interactive-suggestion {
-  outline: 4px dashed rgba(22, 163, 74, 0.7) !important;
-  outline-offset: 2px;
-  transition: all 0.2s ease-in-out;
-  cursor: pointer !important;
-}
 
-.loomsky-interactive-suggestion:hover {
-  outline-style: solid;
-  outline-color: rgba(22, 163, 74, 1);
-  box-shadow: 0 0 12px rgba(22, 163, 74, 0.5);
+.mapping-loomsky {
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
 }
 </style>
