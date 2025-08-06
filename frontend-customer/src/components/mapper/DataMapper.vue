@@ -115,7 +115,6 @@ const dragOffset = ref({ x: 0, y: 0 });
 let suggestionStyleTag = null;
 let highlightOverlayElement = null;
 const mappedElements = ref([]);
-// SỬA LỖI 1: Khai báo biến suggestionElements
 const suggestionElements = ref([]);
 
 // --- STATIC DATA ---
@@ -194,12 +193,11 @@ const saveMapping = async () => {
     }
     isSaving.value = true;
     
-    // Sử dụng toRaw() để lấy đối tượng gốc, không phải proxy
     const plainPayload = toRaw(selectedElementData.value);
 
     window.opener.postMessage({
         type: 'LOOMSKY_SAVE_MAPPING',
-        payload: plainPayload, // Gửi đi đối tượng đơn giản
+        payload: plainPayload,
     }, '*');
     
     setTimeout(async () => {
@@ -209,12 +207,8 @@ const saveMapping = async () => {
     }, 500);
 };
 
-/**
- * SỬA LỖI: Cập nhật hàm deleteMapping
- */
 const deleteMapping = async (mappingToDelete) => {
     if (confirm(`Bạn có chắc muốn xóa ánh xạ cho "${mappingToDelete.variable_name}"?`)) {
-        // Sử dụng toRaw() ở đây cũng là một thói quen tốt
         const plainPayload = { id: toRaw(mappingToDelete).id };
 
         window.opener.postMessage({
@@ -247,7 +241,7 @@ const highlightExistingMappings = () => {
                 el.classList.add('loomsky-already-mapped');
                 mappedElements.value.push(el);
             });
-        } catch { /* SỬA LỖI 2: Gỡ bỏ biến `e` không dùng đến */ }
+        } catch { }
     });
 };
 
@@ -264,7 +258,7 @@ const highlightElementBySelector = (selector) => {
     } else {
       highlightOverlayElement.style.display = 'none';
     }
-  } catch { /* SỬA LỖI 2: Gỡ bỏ biến `e` không dùng đến */ }
+  } catch { }
 };
 
 const clearManualHighlight = () => {
@@ -313,55 +307,67 @@ onUnmounted(() => {
   if (suggestionStyleTag) suggestionStyleTag.remove();
   if (highlightOverlayElement) highlightOverlayElement.remove();
   
-  // Dọn dẹp cả hai loại class
   suggestionElements.value.forEach(el => { if (el) el.classList.remove('loomsky-interactive-suggestion'); });
   mappedElements.value.forEach(el => { if (el) el.classList.remove('loomsky-already-mapped'); });
 });
 </script>
 
 <style>
-/* Mục tiêu: Biến v-app thành một lớp "vô hình", không tương tác,
-  chỉ để cung cấp context cho các component Vuetify.
-*/
+/* FIXED: Đơn giản hóa CSS để tránh vấn đề positioning */
 .loomsky-mapper-app {
-  /* Gỡ bỏ các style cũ, thay bằng cách tiếp cận mới */
-  
-  /* Đặt nó ở vị trí tuyệt đối và trong suốt */
-  position: absolute;
-  top: 0;
-  left: 0;
+  /* Chỉ cung cấp context cho Vuetify, không ảnh hưởng đến layout */
   background: transparent !important;
   
-  /* RẤT QUAN TRỌNG: Cho phép click "xuyên qua" lớp v-app */
-  pointer-events: none; 
-}
-
-/* Ghi đè layout wrap của Vuetify để nó không tạo "sidebar" */
-.loomsky-mapper-app .v-application__wrap {
-  min-height: 0 !important;
-}
-
-/* RẤT QUAN TRỌNG: Cho phép các thành phần UI nhận lại sự kiện click */
-.mapper-popup, .minimized-btn {
+  /* Loại bỏ các style gây xung đột */
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  
+  /* Cho phép tương tác bình thường */
   pointer-events: auto;
 }
 
-/* Các style khác giữ nguyên như file đúng của bạn */
+/* Đảm bảo Vuetify wrapper không gây ảnh hưởng */
+.loomsky-mapper-app .v-application__wrap {
+  min-height: 0 !important;
+  position: static !important;
+}
+
+/* Popup được định vị độc lập */
 .mapper-popup { 
-  position: fixed; 
+  position: fixed !important; 
   width: 400px; 
   z-index: 2147483647; 
   border: 1px solid #e0e0e0; 
-  background: white; 
+  background: white;
+  /* Đảm bảo popup không bị ảnh hưởng bởi parent */
+  transform: none !important;
 }
+
+/* CRITICAL: Override v-system-bar default styles */
+.mapper-popup .v-system-bar {
+  position: relative !important;
+  width: 100% !important;
+  left: 0 !important;
+  top: 0 !important;
+  transform: none !important;
+  /* Đảm bảo nó nằm trong popup */
+  max-width: none !important;
+}
+
 .draggable-handle { 
   cursor: move; 
-  user-select: none; 
+  user-select: none;
+  /* Đảm bảo header luôn nằm trong popup */
+  position: relative !important;
+  z-index: 1;
 }
+
 .tab-content { 
   max-height: 400px; 
   overflow-y: auto; 
 }
+
 .selector-code { 
   background-color: #e5e7eb; 
   color: #1f2937; 
@@ -373,6 +379,7 @@ onUnmounted(() => {
   font-family: monospace; 
   font-size: 0.8rem; 
 }
+
 .selector-code.small { 
   font-size: 0.75rem; 
   white-space: nowrap; 
@@ -380,8 +387,9 @@ onUnmounted(() => {
   text-overflow: ellipsis; 
   max-width: 200px; 
 }
+
 .minimized-btn { 
-  position: fixed; 
+  position: fixed !important; 
   z-index: 2147483647; 
   top: 20px; 
   right: 20px; 
