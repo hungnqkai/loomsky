@@ -395,8 +395,7 @@ onUnmounted(() => {
 
 /* Header Section */
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: black;
   padding: 30px;
   position: relative;
   overflow: hidden;

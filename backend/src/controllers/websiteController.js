@@ -46,7 +46,107 @@ const websiteController = {
             where: { client_id: req.user.client_id },
             order: [['created_at', 'DESC']],
         });
-        res.status(200).json({ success: true, data: websites });
+
+        // Lấy stats cho từng website
+        const websitesWithStats = await Promise.all(websites.map(async (website) => {
+            const websiteId = website.id;
+            
+            try {
+                // Đếm số lượng các tài nguyên
+                const [pixelCount, eventCount, filterCount, blacklistCount] = await Promise.all([
+                    models.Pixel.count({ where: { website_id: websiteId } }).catch(() => 0),
+                    models.Event.count({
+                        include: [{
+                            model: models.Session,
+                            where: { website_id: websiteId },
+                            attributes: []
+                        }]
+                    }).catch(() => 0),
+                    models.EventFilter.count({ where: { website_id: websiteId } }).catch(() => 0),
+                    models.Blacklist.count({ where: { website_id: websiteId } }).catch(() => 0)
+                ]);
+
+                // Lấy activity gần nhất và trạng thái kết nối
+                const [latestEvent, latestSession] = await Promise.all([
+                    models.Event.findOne({
+                        include: [{
+                            model: models.Session,
+                            where: { website_id: websiteId },
+                            attributes: []
+                        }],
+                        order: [['created_at', 'DESC']],
+                        attributes: ['created_at']
+                    }).catch(() => null),
+                    models.Session.findOne({
+                        where: { website_id: websiteId },
+                        order: [['updated_at', 'DESC']],
+                        attributes: ['updated_at']
+                    }).catch(() => null)
+                ]);
+
+            // Xác định last_activity và connection status
+            let lastActivity = null;
+            let isConnected = false;
+            
+            try {
+                if (latestEvent || latestSession) {
+                    const eventTime = latestEvent?.created_at ? new Date(latestEvent.created_at) : null;
+                    const sessionTime = latestSession?.updated_at ? new Date(latestSession.updated_at) : null;
+                    
+                    // Kiểm tra tính hợp lệ của dates
+                    const validEventTime = eventTime && !isNaN(eventTime.getTime()) ? eventTime : null;
+                    const validSessionTime = sessionTime && !isNaN(sessionTime.getTime()) ? sessionTime : null;
+                    
+                    if (validEventTime && validSessionTime) {
+                        lastActivity = validEventTime > validSessionTime ? validEventTime : validSessionTime;
+                    } else if (validEventTime) {
+                        lastActivity = validEventTime;
+                    } else if (validSessionTime) {
+                        lastActivity = validSessionTime;
+                    }
+                }
+
+                // Connected nếu có activity trong 5 phút gần đây
+                if (lastActivity) {
+                    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                    isConnected = lastActivity > fiveMinutesAgo;
+                }
+            } catch (error) {
+                console.error(`Error processing dates for website ${websiteId}:`, error);
+                lastActivity = null;
+                isConnected = false;
+            }
+
+            // Chuyển website thành plain object và thêm stats
+            const websiteData = website.toJSON();
+                return {
+                    ...websiteData,
+                    pixels_count: pixelCount || 0,
+                    events_count: eventCount || 0,
+                    filters_count: filterCount || 0,
+                    blacklist_count: blacklistCount || 0,
+                    last_activity: lastActivity ? lastActivity.toISOString() : null,
+                    is_connected: Boolean(isConnected),
+                    connection_status: isConnected ? 'connected' : 'disconnected'
+                };
+            } catch (error) {
+                console.error(`Error processing stats for website ${websiteId}:`, error);
+                // Return website with default stats if processing fails
+                const websiteData = website.toJSON();
+                return {
+                    ...websiteData,
+                    pixels_count: 0,
+                    events_count: 0,
+                    filters_count: 0,
+                    blacklist_count: 0,
+                    last_activity: null,
+                    is_connected: false,
+                    connection_status: 'disconnected'
+                };
+            }
+        }));
+
+        res.status(200).json({ success: true, data: websitesWithStats });
     }),
 
     getWebsiteById: [checkWebsiteOwnership, asyncHandler(async (req, res) => {
@@ -192,6 +292,168 @@ const websiteController = {
 
         await entry.destroy();
         res.status(200).json({ success: true, message: 'Blacklist entry deleted successfully.' });
+    })],
+
+    // === CONNECTION STATUS & DASHBOARD STATS CONTROLLERS ===
+    getConnectionStatus: [checkWebsiteOwnership, asyncHandler(async (req, res) => {
+        const websiteId = req.website.id;
+        
+        // Kiểm tra session gần nhất để xác định trạng thái kết nối
+        const latestSession = await models.Session.findOne({
+            where: { website_id: websiteId },
+            order: [['updated_at', 'DESC']]
+        });
+
+        // Kiểm tra event gần nhất thông qua Session (vì Event không có website_id trực tiếp)
+        const latestEvent = await models.Event.findOne({
+            include: [{
+                model: models.Session,
+                where: { website_id: websiteId },
+                attributes: []
+            }],
+            order: [['created_at', 'DESC']]
+        });
+
+        let connected = false;
+        let lastSeen = null;
+        let method = 'unknown';
+        
+        // Xác định trạng thái kết nối dựa trên activity trong 5 phút gần đây
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        
+        if (latestSession || latestEvent) {
+            const sessionTime = latestSession ? new Date(latestSession.updated_at) : null;
+            const eventTime = latestEvent ? new Date(latestEvent.created_at) : null;
+            
+            // Lấy thời gian mới nhất
+            lastSeen = sessionTime && eventTime 
+                ? (sessionTime > eventTime ? sessionTime : eventTime)
+                : (sessionTime || eventTime);
+            
+            connected = lastSeen > fiveMinutesAgo;
+            
+            // Xác định method dựa trên properties hoặc device_info
+            if (latestSession && latestSession.device_info) {
+                method = latestSession.device_info.sdk_version ? 'sdk' : 'plugin';
+            } else {
+                method = 'sdk'; // Default assumption
+            }
+        }
+
+        const response = {
+            connected,
+            lastSeen: lastSeen ? lastSeen.toISOString() : null,
+            method,
+            details: {
+                website_id: websiteId,
+                website_name: req.website.name,
+                domain: req.website.domain,
+                platform_type: req.website.platform_type,
+                last_session_activity: latestSession ? latestSession.updated_at : null,
+                last_event_activity: latestEvent ? latestEvent.created_at : null
+            }
+        };
+
+        res.status(200).json({ success: true, data: response });
+    })],
+
+    getDashboardStats: [checkWebsiteOwnership, asyncHandler(async (req, res) => {
+        const websiteId = req.website.id;
+
+        // Đếm số lượng các tài nguyên và lấy data mappings
+        const [pixelCount, eventCount, filterCount, blacklistCount, sessionCount, dataMappingCount, dataMappings] = await Promise.all([
+            models.Pixel.count({ where: { website_id: websiteId } }),
+            // Đếm events thông qua Session (vì Event không có website_id trực tiếp)
+            models.Event.count({
+                include: [{
+                    model: models.Session,
+                    where: { website_id: websiteId },
+                    attributes: []
+                }]
+            }),
+            models.EventFilter.count({ where: { website_id: websiteId } }),
+            models.Blacklist.count({ where: { website_id: websiteId } }),
+            models.Session.count({ where: { website_id: websiteId } }),
+            models.DataMapping.count({ where: { website_id: websiteId } }),
+            models.DataMapping.findAll({
+                where: { website_id: websiteId },
+                attributes: ['id', 'variable_name', 'selector', 'page_context', 'created_at'],
+                order: [['created_at', 'DESC']]
+            })
+        ]);
+
+        // Lấy thời gian activity gần nhất và first session
+        const [latestEvent, latestSession, firstSession] = await Promise.all([
+            models.Event.findOne({
+                include: [{
+                    model: models.Session,
+                    where: { website_id: websiteId },
+                    attributes: []
+                }],
+                order: [['created_at', 'DESC']],
+                attributes: ['created_at']
+            }),
+            models.Session.findOne({
+                where: { website_id: websiteId },
+                order: [['updated_at', 'DESC']],
+                attributes: ['updated_at']
+            }),
+            models.Session.findOne({
+                where: { website_id: websiteId },
+                order: [['start_time', 'ASC']],
+                attributes: ['start_time']
+            })
+        ]);
+
+        let lastActivity = null;
+        if (latestEvent || latestSession) {
+            const eventTime = latestEvent ? new Date(latestEvent.created_at) : null;
+            const sessionTime = latestSession ? new Date(latestSession.updated_at) : null;
+            
+            lastActivity = eventTime && sessionTime 
+                ? (eventTime > sessionTime ? eventTime : sessionTime)
+                : (eventTime || sessionTime);
+        }
+
+        // Tracking Setup Status
+        const trackingSetup = {
+            isSetup: sessionCount > 0 || eventCount > 0,
+            method: req.website.platform_type === 'wordpress' ? 'plugin' : 'sdk',
+            status: (() => {
+                if (sessionCount === 0 && eventCount === 0) return 'not_configured';
+                if (!lastActivity) return 'inactive';
+                
+                const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                return lastActivity > twentyFourHoursAgo ? 'active' : 'inactive';
+            })(),
+            firstSetup: firstSession ? firstSession.start_time : null,
+            lastSeen: lastActivity ? lastActivity.toISOString() : null
+        };
+
+        // Data Mapping Information
+        const dataMapping = {
+            total: dataMappingCount,
+            configured: dataMappingCount > 0,
+            mappings: dataMappings.map(mapping => ({
+                id: mapping.id,
+                variable_name: mapping.variable_name,
+                selector: mapping.selector,
+                page_context: mapping.page_context,
+                created_at: mapping.created_at
+            }))
+        };
+
+        const stats = {
+            totalPixels: pixelCount,
+            totalEvents: eventCount,
+            totalFilters: filterCount,
+            totalBlacklisted: blacklistCount,
+            lastActivity: lastActivity ? lastActivity.toISOString() : null,
+            trackingSetup,
+            dataMapping
+        };
+
+        res.status(200).json({ success: true, data: stats });
     })],
 };
 

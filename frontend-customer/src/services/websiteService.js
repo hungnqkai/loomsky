@@ -36,6 +36,10 @@ const websiteService = {
   getBlacklist: (websiteId) => api.get(`/websites/${websiteId}/blacklist`),
   addBlacklistEntry: (websiteId, data) => api.post(`/websites/${websiteId}/blacklist`, data),
   deleteBlacklistEntry: (websiteId, blacklistId) => api.delete(`/websites/${websiteId}/blacklist/${blacklistId}`),
+
+  // === Connection Status & Dashboard Stats (MỚI) ===
+  getConnectionStatus: (websiteId) => api.get(`/websites/${websiteId}/connection-status`),
+  getDashboardStats: (websiteId) => api.get(`/websites/${websiteId}/dashboard-stats`),
 };
 
 export default websiteService;

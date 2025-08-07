@@ -59,5 +59,11 @@ router.route('/:websiteId/blacklist')
 router.route('/:websiteId/blacklist/:blacklistId')
     .delete(validate(websiteValidators.deleteBlacklistSchema), websiteController.deleteBlacklistEntry);
 
+// --- Routes cho Connection Status và Dashboard Stats ---
+router.route('/:websiteId/connection-status')
+    .get(validate(websiteValidators.getWebsiteSchema), websiteController.getConnectionStatus);
+
+router.route('/:websiteId/dashboard-stats')
+    .get(validate(websiteValidators.getWebsiteSchema), websiteController.getDashboardStats);
 
 module.exports = router;

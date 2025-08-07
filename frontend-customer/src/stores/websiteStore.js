@@ -14,6 +14,8 @@ export const useWebsiteStore = defineStore('website', () => {
   const eventFilters = ref([]);
   const blacklist = ref([]);
   const dataMappings = ref([]);
+  const connectionStatus = ref(null);
+  const dashboardStats = ref(null);
   const loading = ref(false);
   const actionLoading = ref(false); // Loading riêng cho các hành động nhỏ
   const error = ref(null);
@@ -67,7 +69,9 @@ export const useWebsiteStore = defineStore('website', () => {
         fetchPixels(websiteId),
         fetchEventFilters(websiteId),
         fetchBlacklist(websiteId),
-        fetchDataMappings(websiteId) // (MỚI)
+        fetchDataMappings(websiteId),
+        fetchConnectionStatus(websiteId),
+        fetchDashboardStats(websiteId)
       ]);
     } catch (err) {
       error.value = err.response?.data?.error || 'Không tìm thấy website.';
@@ -305,12 +309,42 @@ export const useWebsiteStore = defineStore('website', () => {
     }
   }
 
+  // === Connection Status & Dashboard Stats Actions (MỚI) ===
+  async function fetchConnectionStatus(websiteId) {
+    try {
+      const response = await websiteService.getConnectionStatus(websiteId);
+      connectionStatus.value = response.data.data;
+    } catch (err) {
+      console.error('Không thể tải trạng thái kết nối:', err);
+    }
+  }
+
+  async function fetchDashboardStats(websiteId) {
+    try {
+      const response = await websiteService.getDashboardStats(websiteId);
+      dashboardStats.value = response.data.data;
+    } catch (err) {
+      console.error('Không thể tải thống kê dashboard:', err);
+    }
+  }
+
+  // Refresh both status and stats
+  async function refreshWebsiteStatus(websiteId) {
+    await Promise.all([
+      fetchConnectionStatus(websiteId),
+      fetchDashboardStats(websiteId)
+    ]);
+  }
+
   return {
-    websites, currentWebsite, pixels, eventFilters, blacklist,
+    websites, currentWebsite, pixels, eventFilters, blacklist, dataMappings,
+    connectionStatus, dashboardStats,
     loading, actionLoading, error, successMessage,
     clearMessages, fetchWebsites, createWebsite, fetchWebsiteById, deleteWebsite,
     fetchPixels, addPixel, updatePixel, deletePixel,
     fetchEventFilters, addEventFilter, deleteEventFilter,
-    fetchBlacklist, addBlacklistEntry, deleteBlacklistEntry, dataMappings, fetchDataMappings, initSetupSession, addDataMapping, deleteDataMapping
+    fetchBlacklist, addBlacklistEntry, deleteBlacklistEntry,
+    fetchDataMappings, initSetupSession, addDataMapping, deleteDataMapping,
+    fetchConnectionStatus, fetchDashboardStats, refreshWebsiteStatus
   };
 });

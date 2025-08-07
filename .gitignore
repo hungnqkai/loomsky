@@ -17,3 +17,8 @@
 # SDK
 /sdk/node_modules
 /sdk/package-lock.json
+
+# Claude
+/claude
+/CLAUDE.md
+/requirements.md
