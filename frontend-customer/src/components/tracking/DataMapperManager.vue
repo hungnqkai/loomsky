@@ -1,20 +1,31 @@
 <template>
   <v-card flat>
     <v-card-title class="d-flex justify-space-between align-center">
-      <span>Từ điển Dữ liệu (Data Dictionary)</span>
+      <span>Data Dictionary</span>
       <v-btn
         color="primary"
         @click="startSetupSession"
         :loading="websiteStore.actionLoading"
         prepend-icon="mdi-magic-staff"
       >
-        Thiết lập Trực quan
+        Add Data Dictionary
       </v-btn>
     </v-card-title>
     <v-card-text>
       <p class="mb-4">
-        "Dạy" cho LoomSky biết các dữ liệu quan trọng (giá, tên sản phẩm...) nằm ở đâu trên website của bạn. Các ánh xạ này sẽ được áp dụng cho toàn bộ website.
+        “Teach” LoomSky where important data (prices, product names, etc.) is located on your website. These mappings will be applied to the entire website.
       </p>
+
+      <div>
+        <p>Step 1: You can use the Event Setup Tool to add standard events and parameters without the need to code. This is the easiest option to install pixel events.</p>
+        <p>Only use this tool on websites that you manage.</p>
+        <p>Only use this tool on websites that you manage. The website that you connect to will have access to your ad account configurations.</p>
+      </div>
+
+      <br><br>
+
+      <p>Step 2: Verify your events in Events Manager (Recommended)</p>
+      <p>Events Manager offers tools to help you troubleshoot and verify your event setup in real time. After you set up events, go to Test Events to make sure your events are firing correctly, see what information they are sending and view any issues. <a target="_blank"href="/business/help/2040882565969969"> Learn more</a></p>
 
       <v-alert v-if="websiteStore.error" type="error" class="mb-4" closable @click:close="websiteStore.clearMessages()">{{ websiteStore.error }}</v-alert>
       <v-alert v-if="websiteStore.successMessage" type="success" class="mb-4" closable @click:close="websiteStore.clearMessages()">{{ websiteStore.successMessage }}</v-alert>
@@ -25,7 +36,7 @@
         :items="websiteStore.dataMappings"
         :loading="websiteStore.loading"
         item-value="id"
-        no-data-text="Chưa có ánh xạ dữ liệu nào."
+        no-data-text="No data mapping yet."
       >
         <template v-slot:item.selector="{ item }">
           <code class="selector-code">{{ item.selector }}</code>
@@ -65,10 +76,10 @@ const websiteStore = useWebsiteStore();
 let mapperWindow = null;
 
 const headers = [
-  { title: 'Tên Biến', value: 'variable_name' },
-  { title: 'CSS Selector', value: 'selector' },
-  { title: 'Ngữ cảnh trang', value: 'page_context' },
-  { title: 'Hành động', value: 'actions', sortable: false, align: 'end' },
+  { title: 'Variable name', value: 'variable_name' },
+  { title: 'Element', value: 'selector' },
+  { title: 'Page Type', value: 'page_context' },
+  { title: 'Actions', value: 'actions', sortable: false, align: 'end' },
 ];
 
 // --- Logic Dialog Xóa (Giữ nguyên) ---

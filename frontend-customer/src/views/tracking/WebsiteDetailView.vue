@@ -15,11 +15,11 @@ File: src/views/tracking/WebsiteDetailView.vue (CẬP NHẬT)
       <p class="text-medium-emphasis mb-4">{{ websiteStore.currentWebsite.domain }}</p>
 
       <v-tabs v-model="tab" bg-color="primary" class="mb-4">
-        <v-tab value="setup">Hướng dẫn Cài đặt</v-tab>
-        <v-tab value="datamaps">Ánh xạ Dữ liệu</v-tab>
-        <v-tab value="pixels">Quản lý Pixels</v-tab>
-        <v-tab value="events">Sự kiện & Chuyển đổi</v-tab>
-        <v-tab value="filters">Bộ lọc Sự kiện</v-tab>
+        <v-tab value="setup">Get started</v-tab>
+        <v-tab value="datamaps">Data Dictionary</v-tab>
+        <v-tab value="pixels">Pixels</v-tab>
+        <v-tab value="events">Events & Conversions</v-tab>
+        <v-tab value="filters">Auto event filter</v-tab>
         <v-tab value="blacklist">Blacklist</v-tab>
       </v-tabs>
 

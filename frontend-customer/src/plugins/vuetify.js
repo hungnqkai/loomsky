@@ -25,7 +25,7 @@ const loomskyTheme = {
     light: {
       dark: false,
       colors: {
-        primary: '#0074ba',     // Tương ứng với --loomsky-primary
+        primary: '#0067b8',     // Tương ứng với --loomsky-primary
         secondary: '#EC4899',   // Tương ứng với --loomsky-secondary
         accent: '#10B981',      // Tương ứng với --loomsky-accent
         error: '#EF4444',       // Tương ứng với --loomsky-error
