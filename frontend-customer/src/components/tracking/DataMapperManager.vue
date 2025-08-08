@@ -5,8 +5,8 @@
       <div class="header">
         <div class="header-content">
           <div class="header-left">
-            <h1>Data Dictionary</h1>
-            <p>"Teach" LoomSky where important data (prices, product names, etc.) is located on your website. These mappings will be applied to the entire website.</p>
+            <h1 class="text-h5">Data Dictionary</h1>
+            <p class="text-body-1 text--secondary">"Teach" LoomSky where important data (prices, product names, etc.) is located on your website. These mappings will be applied to the entire website.</p>
           </div>
           
         </div>
@@ -60,7 +60,7 @@
 
       <!-- Search & Filter Section -->
       <div class="section-header">
-        <h2 class="section-title">Data Mappings</h2>
+        <h2 class="section-title text-h6">Data Mappings</h2>
         <div class="search-filter">
           <input 
             type="text" 
@@ -408,22 +408,6 @@ onUnmounted(() => {
   width: 100%;
 }
 
-.header::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(180deg); }
-}
-
 .header-content {
   position: relative;
   z-index: 1;
@@ -465,10 +449,7 @@ onUnmounted(() => {
 }
 
 .add-btn:hover:not(:disabled) {
-  background: rgba(255,255,255,0.3);
-  border-color: rgba(255,255,255,0.5);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
 }
 
 .add-btn:disabled {

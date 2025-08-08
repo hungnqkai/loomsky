@@ -202,7 +202,9 @@
           <!-- Privacy Notice -->
           <div class="privacy-notice">
             <p class="privacy-text">
-              We're committed to your privacy. LoomSky uses the information you provide to us to contact you about our relevant content, products, and services. You may unsubscribe from these communications at any time. For more information, check out our 
+              By signing up for an account, you agree to LoomSky's <b>Privacy Policy, Terms of Use</b>, and other applicable policies.
+              <br>
+              We’re committed to your privacy. LoomSky uses the information you provide to contact you about relevant content, products, and services. You may unsubscribe from these communications at any time. For more details, please review our 
               <a href="#" @click.prevent>Privacy Policy</a>.
             </p>
           </div>
@@ -305,11 +307,11 @@ const validateField = (field) => {
   switch (field) {
     case 'firstName':
       if (!formData.first_name.trim()) {
-        validationErrors.firstName = 'Tên không được để trống';
+        validationErrors.firstName = 'First name cannot be blank';
         return false;
       }
       if (!nameRegex.test(formData.first_name)) {
-        validationErrors.firstName = 'Tên chỉ được chứa chữ cái, khoảng trắng và dấu';
+        validationErrors.firstName = 'Names can only contain letters, spaces and punctuation marks.';
         return false;
       }
       validationSuccess.firstName = true;
@@ -317,11 +319,11 @@ const validateField = (field) => {
 
     case 'lastName':
       if (!formData.last_name.trim()) {
-        validationErrors.lastName = 'Họ không được để trống';
+        validationErrors.lastName = 'Last name cannot be blank';
         return false;
       }
       if (!nameRegex.test(formData.last_name)) {
-        validationErrors.lastName = 'Họ chỉ được chứa chữ cái, khoảng trắng và dấu';
+        validationErrors.lastName = 'Names can only contain letters, spaces and punctuation marks.';
         return false;
       }
       validationSuccess.lastName = true;
@@ -433,16 +435,16 @@ const passwordStrengthText = computed(() => {
   if (!password) return '';
   
   const missing = [];
-  if (password.length < passwordRules.minLength) missing.push('8 ký tự');
-  if (!passwordRules.hasUpper.test(password)) missing.push('chữ hoa');
+  if (password.length < passwordRules.minLength) missing.push('8 characters');
+  if (!passwordRules.hasUpper.test(password)) missing.push('uppercase');
   if (!passwordRules.hasLower.test(password)) missing.push('chữ thường');
-  if (!passwordRules.hasNumber.test(password)) missing.push('số');
-  if (!passwordRules.hasSpecial.test(password)) missing.push('ký tự đặc biệt');
+  if (!passwordRules.hasNumber.test(password)) missing.push('number');
+  if (!passwordRules.hasSpecial.test(password)) missing.push('special characters');
   
-  if (score <= 2) return `Mật khẩu yếu - cần: ${missing.join(', ')}`;
-  if (score === 3) return `Mật khẩu trung bình - thêm: ${missing.join(', ')}`;
-  if (score === 4) return 'Mật khẩu tốt';
-  return 'Mật khẩu mạnh';
+  if (score <= 2) return `Weak password - required: ${missing.join(', ')}`;
+  if (score === 3) return `Average password - should add: ${missing.join(', ')}`;
+  if (score === 4) return 'Good';
+  return 'Strong';
 });
 
 // Password match computation
@@ -457,8 +459,8 @@ const passwordMatchIcon = computed(() => {
 });
 
 const passwordMatchText = computed(() => {
-  if (!formData.confirmPassword) return 'Nhập lại mật khẩu để xác nhận';
-  return formData.password === formData.confirmPassword ? 'Mật khẩu khớp' : 'Mật khẩu không khớp';
+  if (!formData.confirmPassword) return 'Re-enter password to confirm';
+  return formData.password === formData.confirmPassword ? 'Password matches' : 'Passwords do not match';
 });
 
 // Input styling helper
@@ -480,9 +482,9 @@ const isFormValid = computed(() => {
 
 // Button text
 const getButtonText = () => {
-  if (authStore.loading) return 'Đang tạo tài khoản...';
-  if (registerSuccess.value) return 'Thành công!';
-  return 'Tạo tài khoản';
+  if (authStore.loading) return 'Creating account...';
+  if (registerSuccess.value) return 'Success!';
+  return 'Create account';
 };
 
 // Form submission
@@ -613,7 +615,7 @@ const onRegister = () => {
 /* Main Container */
 .register-container {
   width: 100%;
-  max-width: 520px;
+  max-width: 620px;
   z-index: 10;
   position: relative;
   animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -876,9 +878,8 @@ const onRegister = () => {
 }
 
 .privacy-text {
-  font-size: 0.75rem;
+  font-size: 14px;
   color: var(--loomsky-text-body);
-  line-height: 1.5;
   margin: 0;
 }
 

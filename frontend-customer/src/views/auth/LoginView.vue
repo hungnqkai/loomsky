@@ -238,7 +238,7 @@ const onLogin = () => {
 .login-container {
   width: 100%;
   width: 500px;
-  max-width: 580px;
+  max-width: 620px;
   z-index: 10;
   position: relative;
   animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);

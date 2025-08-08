@@ -11,8 +11,8 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
         <div class="header-section">
             <div class="header-content">
                 <div class="header-left">
-                    <h2 class="header-title">Facebook Pixels & Event Configuration</h2>
-                    <p class="header-description">
+                    <h2 class="header-title text-h5">Facebook Pixels & Event Configuration</h2>
+                    <p class="text-body-1 text--secondary header-description">
                         Connect Facebook Pixels with comprehensive event tracking and conversion optimization. Configure standard events, custom engagement tracking, and activation rules.
                     </p>
                 </div>
@@ -26,7 +26,7 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
         <!-- Main Content Card -->
         <v-card class="main-content" flat>
             <div class="content-header">
-                <h3 class="content-title">Configured Pixels</h3>
+                <h3 class="content-title text-h6">Configured Pixels</h3>
                 <p class="content-subtitle">Manage your Facebook Pixels and their event configurations</p>
             </div>
 
@@ -104,7 +104,7 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
                         <div class="empty-icon">
                             <v-icon size="64" color="grey-lighten-2">mdi-facebook</v-icon>
                         </div>
-                        <h3 class="empty-title">No Pixels Configured Yet</h3>
+                        <h3 class="empty-title text-h6">No Pixels Configured Yet</h3>
                         <p class="empty-text">
                             Get started by adding your first Facebook Pixel to begin tracking user interactions and optimizing your advertising campaigns.
                         </p>
@@ -139,7 +139,7 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
     <v-navigation-drawer
         v-model="sidebar"
         location="right"
-        width="700"
+        width="800"
         temporary
         fixed
         app
@@ -159,11 +159,11 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
                 
                 <!-- Setup Mode Toggle -->
                 <div class="setup-mode-toggle mt-4">
-                    <v-btn-toggle v-model="setupMode" mandatory variant="outlined" divided>
-                        <v-btn value="guided" prepend-icon="mdi-wizard-hat">
+                    <v-btn-toggle class="setup-mode-toggle" v-model="setupMode" mandatory variant="outlined" divided>
+                        <v-btn class="mode-btn" value="guided" prepend-icon="mdi-wizard-hat">
                             Guided Setup
                         </v-btn>
-                        <v-btn value="advanced" prepend-icon="mdi-cog">
+                        <v-btn class="mode-btn" value="advanced" prepend-icon="mdi-cog">
                             Advanced Setup
                         </v-btn>
                     </v-btn-toggle>
@@ -812,34 +812,14 @@ onMounted(() => {
 
 /* Enhanced Header Section */
 .header-section {
-    background: linear-gradient(135deg, #1877f2 0%, #166fe5 100%);
-    color: white;
+    color: black;
     border-radius: 16px;
     padding: 32px;
     margin-bottom: 24px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(24, 119, 242, 0.2);
-}
-
-.header-section::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -10%;
-    width: 100%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: float 8s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { 
-        transform: translateY(0px) rotate(0deg); 
-    }
-    50% { 
-        transform: translateY(-30px) rotate(180deg); 
-    }
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .header-content {
@@ -847,7 +827,7 @@ onMounted(() => {
     z-index: 1;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: 24px;
 }
 
@@ -856,8 +836,7 @@ onMounted(() => {
 }
 
 .header-title {
-    font-size: 2em;
-    font-weight: 700;
+    font-weight: 600;
     margin-bottom: 8px;
     line-height: 1.2;
 }
@@ -870,18 +849,22 @@ onMounted(() => {
 }
 
 .add-pixel-btn {
-    background: rgba(255,255,255,0.2) !important;
-    border: 2px solid rgba(255,255,255,0.3);
-    color: white !important;
+    background: var(--loomsky-primary);
+    color: white;
+    padding: 25px 24px;
+    border-radius: 8px;
+    font-size: 16px;
     font-weight: 600;
-    backdrop-filter: blur(10px);
+    cursor: pointer;
     transition: all 0.3s ease;
-    text-transform: none;
-    letter-spacing: normal;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    text-transform: capitalize;
 }
 
 .add-pixel-btn:hover {
-    background: rgba(255,255,255,0.3) !important;
     transform: translateY(-2px);
 }
 
@@ -1138,5 +1121,29 @@ onMounted(() => {
         align-items: flex-start;
         gap: 4px;
     }
+}
+
+.mode-btn {
+    width: 100%;
+    flex-shrink: unset;
+}
+
+.v-btn--active.mode-btn {
+    background: #1877f2;
+    color: #fff;
+}
+
+.v-stepper-item {
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px
+}
+
+.v-stepper-item__title {
+    padding-bottom: 5px;
+}
+
+.v-stepper-item__subtitle {
+    text-align: center;
 }
 </style>

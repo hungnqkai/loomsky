@@ -13,7 +13,7 @@ File: src/components/tracking/BlacklistManager.vue (REDESIGNED)
                             <v-icon size="32" color="white">mdi-shield-remove</v-icon>
                         </v-avatar>
                         <div style="flex: 1;">
-                            <h2 class="text-h4 font-weight-bold text--primary mb-2">Blacklist Management</h2>
+                            <h2 class="text-h5 font-weight-bold text--primary mb-2">Blacklist Management</h2>
                             <p class="text-body-1 text--secondary" style="max-width: 600px; line-height: 1.6;">
                                 Block data collection from specific IP addresses, users, or email addresses. These rules apply to your entire site and help maintain Facebook Pixel data quality by eliminating events sent to Facebook via Pixel and CAPI.
                             </p>
@@ -41,7 +41,7 @@ File: src/components/tracking/BlacklistManager.vue (REDESIGNED)
         <v-card class="add-section mb-6" rounded="lg" elevation="0">
             <v-card-text class="pa-8">
                 <div class="mb-6">
-                    <h3 class="text-h6 font-weight-semibold mb-2">Add New Blacklist</h3>
+                    <h3 class="text-h6 font-weight-bold mb-2">Add New Blacklist</h3>
                     <p class="text-body-2 text--secondary">Block specific IPs, users, emails or phone numbers from tracking</p>
                 </div>
                 
@@ -100,68 +100,58 @@ File: src/components/tracking/BlacklistManager.vue (REDESIGNED)
             </v-card-text>
         </v-card>
 
-        <!-- Controls Section -->
-        <v-card class="controls-section mb-6" rounded="lg" elevation="0">
-            <v-card-text class="pa-5">
-                <div class="d-flex justify-space-between align-center" style="gap: 24px;">
-                    <div class="d-flex align-center" style="gap: 20px; flex: 1;">
-                        <!-- Search -->
-                        <v-text-field
-                            v-model="searchTerm"
-                            placeholder="Search blacklist item..."
-                            variant="outlined"
-                            density="compact"
-                            hide-details
-                            style="min-width: 300px;"
-                            prepend-inner-icon="mdi-magnify"
-                            @input="filterEntries"
-                        ></v-text-field>
-                        
-                        <!-- Type Filters -->
-                        <div class="d-flex" style="gap: 8px;">
-                            <v-btn 
-                                v-for="filter in filterOptions" 
-                                :key="filter.value"
-                                :color="activeFilter === filter.value ? 'primary' : 'grey-lighten-3'"
-                                :variant="activeFilter === filter.value ? 'flat' : 'flat'"
-                                size="small"
-                                @click="setFilter(filter.value)"
-                                class="text-none"
-                            >
-                                <v-icon class="mr-1" size="14">{{ filter.icon }}</v-icon>
-                                {{ filter.title }}
-                                <v-chip 
-                                    v-if="filter.count > 0"
-                                    :color="activeFilter === filter.value ? 'white' : 'grey'"
-                                    size="x-small"
-                                    class="ml-1"
-                                >
-                                    {{ filter.count }}
-                                </v-chip>
-                            </v-btn>
-                        </div>
-                    </div>
-
-                    <!-- Bulk Actions -->
-                    <div v-if="selectedItems.length > 0">
-                        <v-btn 
-                            color="error" 
-                            prepend-icon="mdi-delete"
-                            @click="confirmBulkDelete"
-                        >
-                            Delete selected ({{ selectedItems.length }})
-                        </v-btn>
-                    </div>
-                </div>
-            </v-card-text>
-        </v-card>
-
         <!-- Blacklist Content -->
         <v-card class="blacklist-content" rounded="lg" elevation="0">
             <v-card-text class="pa-8">
+                
                 <div class="d-flex justify-space-between align-center mb-6">
-                    <h4 class="text-h6 font-weight-semibold">Blacklist Items</h4>
-                    <span class="text-body-2 text--secondary">{{ filteredItems.length }} items</span>
+                    <h4 class="text-h6 font-weight-bold">Blacklist Items</h4>
+                    <div class="d-flex justify-space-between align-center" style="gap: 24px;">
+                        <div class="d-flex align-center" style="gap: 20px; flex: 1;">
+                            <!-- Search -->
+                            <input 
+                                type="text" 
+                                class="search-input" 
+                                placeholder="Search blacklist item..."
+                                v-model="searchTerm"
+                            >
+                            
+                            <!-- Type Filters -->
+                            <div class="d-flex" style="gap: 8px;">
+                                <v-btn 
+                                    v-for="filter in filterOptions" 
+                                    :key="filter.value"
+                                    :class="activeFilter === filter.value ? 'active' : ''"
+                                    :variant="activeFilter === filter.value ? 'flat' : 'flat'"
+                                    size="small"
+                                    @click="setFilter(filter.value)"
+                                    class="filter-btn"
+                                >
+                                    <v-icon class="mr-1" size="14">{{ filter.icon }}</v-icon>
+                                    {{ filter.title }}
+                                    <v-chip 
+                                        v-if="filter.count > 0"
+                                        :color="activeFilter === filter.value ? 'white' : 'grey'"
+                                        size="x-small"
+                                        class="ml-1"
+                                    >
+                                        {{ filter.count }}
+                                    </v-chip>
+                                </v-btn>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Actions -->
+                        <div v-if="selectedItems.length > 0">
+                            <v-btn 
+                                color="error" 
+                                prepend-icon="mdi-delete"
+                                @click="confirmBulkDelete"
+                            >
+                                Delete selected ({{ selectedItems.length }})
+                            </v-btn>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Items Grid -->
@@ -213,9 +203,6 @@ File: src/components/tracking/BlacklistManager.vue (REDESIGNED)
                     <p class="text-body-1 text--secondary mb-6" style="max-width: 400px; margin: 0 auto;">
                         Your blacklist is empty. Add an IP address, email, or user ID to start blocking unwanted traffic and improving the quality of your data.
                     </p>
-                    <v-btn color="primary" size="large" @click="focusAddForm">
-                        Add first item
-                    </v-btn>
                 </div>
             </v-card-text>
         </v-card>
@@ -425,14 +412,6 @@ const filterEntries = () => {
     selectedItems.value = []; // Clear selection when searching
 };
 
-const focusAddForm = async () => {
-    await nextTick();
-    const valueInput = document.querySelector('input[placeholder*="ví dụ"]');
-    if (valueInput) {
-        valueInput.focus();
-    }
-};
-
 // Load data on mount
 onMounted(() => {
     if (websiteStore.selectedWebsite) {
@@ -528,12 +507,43 @@ onMounted(() => {
 
 /* Vuetify overrides */
 
-
-.v-btn.text-none {
-    text-transform: none !important;
-}
-
 .v-label {
     display: block;
+}
+
+.filter-btn {
+  padding: 10px 16px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  text-transform: capitalize;
+  height: unset;
+}
+
+.filter-btn:hover {
+  background: #e2e8f0;
+}
+
+.filter-btn.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.search-input {
+  padding: 10px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  min-width: 200px;
+  transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
 }
 </style>
