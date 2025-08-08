@@ -40,10 +40,10 @@ import { computed } from 'vue';
 const dialog = defineModel({ type: Boolean, default: false });
 
 const props = defineProps({
-  title: { type: String, default: 'Xác nhận hành động' },
+  title: { type: String, default: 'Confirm action' },
   message: { type: String, required: true },
-  confirmText: { type: String, default: 'Xác nhận' },
-  cancelText: { type: String, default: 'Hủy' },
+  confirmText: { type: String, default: 'Confirm' },
+  cancelText: { type: String, default: 'Cancel' },
   confirmColor: { type: String, default: 'primary' },
   loading: { type: Boolean, default: false },
 });

@@ -1,48 +1,54 @@
 <template>
   <div class="data-dictionary-container">
-    <!-- Header Section -->
-    <div class="header">
-      <div class="header-content">
-        <div class="header-left">
-          <h1>Data Dictionary</h1>
-          <p>"Teach" LoomSky where important data (prices, product names, etc.) is located on your website. These mappings will be applied to the entire website.</p>
+    <v-card class="header-section mb-6" rounded="lg" elevation="0">
+      <!-- Header Section -->
+      <div class="header">
+        <div class="header-content">
+          <div class="header-left">
+            <h1>Data Dictionary</h1>
+            <p>"Teach" LoomSky where important data (prices, product names, etc.) is located on your website. These mappings will be applied to the entire website.</p>
+          </div>
+          
         </div>
+      </div>
+
+      <!-- Stats Section -->
+      <div class="header-right">
         <button 
-          class="add-btn" 
-          @click="startSetupSession"
-          :disabled="websiteStore.actionLoading"
-        >
-          <v-progress-circular 
-            v-if="websiteStore.actionLoading" 
-            size="20" 
-            width="2" 
-            indeterminate 
-            class="mr-2"
-          ></v-progress-circular>
-          <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M22.7,19L13.6,9.9C14.5,7.6 14,4.9 12.1,3C10.1,1 7.1,0.6 4.7,1.7L9,6L6,9L1.6,4.7C0.4,7.1 0.9,10.1 2.9,12.1C4.8,14 7.5,14.5 9.8,13.6L18.9,22.7C19.3,23.1 19.9,23.1 20.3,22.7L22.6,20.4C23.1,20 23.1,19.3 22.7,19Z"/>
-          </svg>
-          Add Data Dictionary
-        </button>
-      </div>
-    </div>
+            class="add-btn" 
+            @click="startSetupSession"
+            :disabled="websiteStore.actionLoading"
+          >
+            <v-progress-circular 
+              v-if="websiteStore.actionLoading" 
+              size="20" 
+              width="2" 
+              indeterminate 
+              class="mr-2"
+            ></v-progress-circular>
+            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.7,19L13.6,9.9C14.5,7.6 14,4.9 12.1,3C10.1,1 7.1,0.6 4.7,1.7L9,6L6,9L1.6,4.7C0.4,7.1 0.9,10.1 2.9,12.1C4.8,14 7.5,14.5 9.8,13.6L18.9,22.7C19.3,23.1 19.9,23.1 20.3,22.7L22.6,20.4C23.1,20 23.1,19.3 22.7,19Z"/>
+            </svg>
+            Add Data Dictionary
+          </button>
 
-    <!-- Stats Section -->
-    <div class="stats-grid">
-      <div class="stat-card total">
-        <div class="stat-number">{{ totalMappings }}</div>
-        <div class="stat-label">Total Mappings</div>
+          <div class="stats-grid">
+            <v-card rounded="lg" class="total" variant="tonal" style="min-width: 70px; max-width: 140px; ">
+              <v-card-text class="pa-5 text-center">
+                <div class="text-h4 stat-number">{{ totalMappings }}</div>
+                <div class="text-caption">Total Mappings</div>
+              </v-card-text>
+            </v-card>
+            <v-card rounded="lg" class="pages" variant="tonal" style="min-width: 70px; max-width: 140px; ">
+              <v-card-text class="pa-5 text-center">
+                <div class="text-h4 stat-number">{{ pagesCovered }}</div>
+                <div class="text-caption">Pages Covered</div>
+              </v-card-text>
+            </v-card>
+          </div>
       </div>
-      <div class="stat-card pages">
-        <div class="stat-number">{{ pagesCovered }}</div>
-        <div class="stat-label">Pages Covered</div>
-      </div>
-      <div class="stat-card updated">
-        <div class="stat-number">{{ lastUpdated }}</div>
-        <div class="stat-label">Last Updated</div>
-      </div>
-    </div>
-
+      
+    </v-card>
     <!-- Alerts -->
     <div class="content">
       <v-alert v-if="websiteStore.error" type="error" class="mb-4" closable @click:close="websiteStore.clearMessages()">
@@ -148,9 +154,9 @@
     <!-- Delete Dialog -->
     <ConfirmDialog
       v-model="deleteDialog"
-      title="Xác nhận xóa"
-      :message="`Bạn có chắc muốn xóa ánh xạ cho <strong>${itemToDelete?.variable_name}</strong>?`"
-      confirm-text="Xóa"
+      title="Confirm deletion"
+      :message="`Are you sure you want to delete the mapping for <strong>${itemToDelete?.variable_name}</strong>?`"
+      confirm-text="Delete"
       confirm-color="error"
       :loading="websiteStore.actionLoading"
       @confirm="confirmDelete"
@@ -399,6 +405,7 @@ onUnmounted(() => {
   padding: 30px;
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 .header::before {
@@ -440,7 +447,7 @@ onUnmounted(() => {
 }
 
 .add-btn {
-  background: rgba(255,255,255,0.2);
+  background: var(--loomsky-primary);
   border: 2px solid rgba(255,255,255,0.3);
   color: white;
   padding: 12px 24px;
@@ -454,6 +461,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   white-space: nowrap;
+  
 }
 
 .add-btn:hover:not(:disabled) {
@@ -470,11 +478,12 @@ onUnmounted(() => {
 
 /* Stats Section */
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
+  justify-content: flex-end;
   gap: 20px;
-  padding: 30px;
+  padding: 30px 0;
   background: #f8fafc;
+  width: 100%;
 }
 
 .stat-card {
@@ -491,27 +500,16 @@ onUnmounted(() => {
   box-shadow: 0 8px 25px rgba(0,0,0,0.1);
 }
 
-.stat-card.total { border-left-color: #3b82f6; }
-.stat-card.pages { border-left-color: #10b981; }
-.stat-card.updated { border-left-color: #f59e0b; }
+.total {border-left-color: #f59e0b;}
+.pages { border-left-color: #10b981; }
 
 .stat-number {
-  font-size: 2.5em;
   font-weight: 700;
   margin-bottom: 8px;
 }
 
-.stat-card.total .stat-number { color: #3b82f6; }
-.stat-card.pages .stat-number { color: #10b981; }
-.stat-card.updated .stat-number { color: #f59e0b; }
-
-.stat-label {
-  color: #64748b;
-  font-weight: 500;
-  font-size: 0.9em;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
+.total { color: #f59e0b; }
+.pages { color: #10b981; }
 
 /* Content Section */
 .content {
@@ -774,6 +772,18 @@ onUnmounted(() => {
   transform: translateY(-2px);
 }
 
+.header-section {
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+    display: flex;
+}
+
+.header-right {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
 /* Responsive */
 @media (max-width: 768px) {
   .header-content {

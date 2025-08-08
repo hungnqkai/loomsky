@@ -6,30 +6,120 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
 - Predefined custom events and enhanced activation rules
 -->
 <template>
-    <v-card flat>
-        <v-card-title class="d-flex justify-space-between align-center">
-            <span>Facebook Pixels & Event Configuration</span>
-            <v-btn color="primary" @click="openSidebar()">
-                <v-icon left>mdi-plus</v-icon>
-                Add New Pixel
-            </v-btn>
-        </v-card-title>
-        <v-card-text>
-            <v-alert v-if="websiteStore.error" type="error" class="mb-4" closable @click:close="websiteStore.clearMessages()">{{ websiteStore.error }}</v-alert>
-            <v-alert v-if="websiteStore.successMessage" type="success" class="mb-4" closable @click:close="websiteStore.clearMessages()">{{ websiteStore.successMessage }}</v-alert>
+    <div class="pixel-manager">
+        <!-- Enhanced Header Section -->
+        <div class="header-section">
+            <div class="header-content">
+                <div class="header-left">
+                    <h2 class="header-title">Facebook Pixels & Event Configuration</h2>
+                    <p class="header-description">
+                        Connect Facebook Pixels with comprehensive event tracking and conversion optimization. Configure standard events, custom engagement tracking, and activation rules.
+                    </p>
+                </div>
+                <v-btn class="add-pixel-btn" @click="openSidebar()">
+                    <v-icon left>mdi-plus</v-icon>
+                    Add New Pixel
+                </v-btn>
+            </div>
+        </div>
+
+        <!-- Main Content Card -->
+        <v-card class="main-content" flat>
+            <div class="content-header">
+                <h3 class="content-title">Configured Pixels</h3>
+                <p class="content-subtitle">Manage your Facebook Pixels and their event configurations</p>
+            </div>
+
+            <v-alert v-if="websiteStore.error" type="error" class="ma-4" closable @click:close="websiteStore.clearMessages()">
+                {{ websiteStore.error }}
+            </v-alert>
+            <v-alert v-if="websiteStore.successMessage" type="success" class="ma-4" closable @click:close="websiteStore.clearMessages()">
+                {{ websiteStore.successMessage }}
+            </v-alert>
+
+            <!-- Enhanced Data Table -->
             <v-data-table
                 :headers="headers"
                 :items="websiteStore.pixels"
                 :loading="websiteStore.actionLoading"
                 item-value="id"
                 no-data-text="No pixels configured yet."
+                class="custom-data-table"
             >
+                <template v-slot:item.pixel_id="{ item }">
+                    <span class="pixel-id-code">{{ item.pixel_id }}</span>
+                </template>
+                
+                <template v-slot:item.events_count="{ item }">
+                    <div class="events-count">
+                        <v-chip 
+                            size="small" 
+                            class="count-badge standard"
+                            v-if="getStandardEventsCount(item) > 0"
+                        >
+                            {{ getStandardEventsCount(item) }} Standard
+                        </v-chip>
+                        <v-chip 
+                            size="small" 
+                            class="count-badge custom"
+                            v-if="getCustomEventsCount(item) > 0"
+                        >
+                            {{ getCustomEventsCount(item) }} Custom
+                        </v-chip>
+                        <v-chip 
+                            size="small" 
+                            class="count-badge conversion"
+                            v-if="getConversionEventsCount(item) > 0"
+                        >
+                            {{ getConversionEventsCount(item) }} Conversions
+                        </v-chip>
+                    </div>
+                </template>
+                
                 <template v-slot:item.actions="{ item }">
-                    <v-icon small class="mr-2" @click="openSidebar(item)">mdi-pencil</v-icon>
-                    <v-icon small color="error" @click="openDeleteDialog(item)">mdi-delete</v-icon>
+                    <div class="table-actions">
+                        <v-btn
+                            icon
+                            size="small"
+                            class="action-btn edit"
+                            @click="openSidebar(item)"
+                            title="Edit pixel"
+                        >
+                            <v-icon size="16">mdi-pencil</v-icon>
+                        </v-btn>
+                        <v-btn
+                            icon
+                            size="small"
+                            class="action-btn delete"
+                            @click="openDeleteDialog(item)"
+                            title="Delete pixel"
+                        >
+                            <v-icon size="16">mdi-delete</v-icon>
+                        </v-btn>
+                    </div>
+                </template>
+
+                <template v-slot:no-data>
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <v-icon size="64" color="grey-lighten-2">mdi-facebook</v-icon>
+                        </div>
+                        <h3 class="empty-title">No Pixels Configured Yet</h3>
+                        <p class="empty-text">
+                            Get started by adding your first Facebook Pixel to begin tracking user interactions and optimizing your advertising campaigns.
+                        </p>
+                        <v-btn 
+                            class="empty-action"
+                            color="primary"
+                            @click="openSidebar()"
+                        >
+                            <v-icon left>mdi-plus</v-icon>
+                            Add Your First Pixel
+                        </v-btn>
+                    </div>
                 </template>
             </v-data-table>
-        </v-card-text>
+        </v-card>
 
         <!-- Delete Dialog -->
         <v-dialog v-model="deleteDialog" max-width="500px">
@@ -43,7 +133,7 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
                 </v-card-actions>
             </v-card>
         </v-dialog>
-    </v-card>
+    </div>
 
     <!-- Sidebar for Add/Edit Pixel (Full viewport height) -->
     <v-navigation-drawer
@@ -686,6 +776,28 @@ const confirmDelete = async () => {
     }
 };
 
+// Event count calculation methods
+const getStandardEventsCount = (item) => {
+    if (!item?.tracking_config?.standard_events) return 0;
+    return Array.isArray(item.tracking_config.standard_events) 
+        ? item.tracking_config.standard_events.length 
+        : 0;
+};
+
+const getCustomEventsCount = (item) => {
+    if (!item?.tracking_config?.custom_events) return 0;
+    return Array.isArray(item.tracking_config.custom_events) 
+        ? item.tracking_config.custom_events.length 
+        : 0;
+};
+
+const getConversionEventsCount = (item) => {
+    if (!item?.tracking_config?.conversion_events) return 0;
+    return Array.isArray(item.tracking_config.conversion_events) 
+        ? item.tracking_config.conversion_events.length 
+        : 0;
+};
+
 // Load data on mount
 onMounted(() => {
     websiteStore.fetchPixels(props.websiteId);
@@ -693,6 +805,245 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Main Container */
+.pixel-manager {
+    padding: 0;
+}
+
+/* Enhanced Header Section */
+.header-section {
+    background: linear-gradient(135deg, #1877f2 0%, #166fe5 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(24, 119, 242, 0.2);
+}
+
+.header-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 100%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: float 8s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { 
+        transform: translateY(0px) rotate(0deg); 
+    }
+    50% { 
+        transform: translateY(-30px) rotate(180deg); 
+    }
+}
+
+.header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.header-title {
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.header-description {
+    opacity: 0.9;
+    font-size: 1.1em;
+    line-height: 1.6;
+    max-width: 600px;
+}
+
+.add-pixel-btn {
+    background: rgba(255,255,255,0.2) !important;
+    border: 2px solid rgba(255,255,255,0.3);
+    color: white !important;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.add-pixel-btn:hover {
+    background: rgba(255,255,255,0.3) !important;
+    transform: translateY(-2px);
+}
+
+/* Main Content */
+.main-content {
+    border-radius: 16px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+    overflow: hidden;
+}
+
+.content-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.content-title {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.content-subtitle {
+    color: #6b7280;
+    font-size: 1em;
+}
+
+/* Enhanced Data Table */
+.custom-data-table {
+    background: transparent;
+}
+
+.custom-data-table :deep(.v-table) {
+    background: transparent;
+}
+
+.custom-data-table :deep(.v-table__wrapper) {
+    border-radius: 0;
+}
+
+.custom-data-table :deep(thead th) {
+    background: #f8fafc !important;
+    color: #374151 !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.85em;
+    height: 56px;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.custom-data-table :deep(tbody tr) {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.2s ease;
+}
+
+.custom-data-table :deep(tbody tr:hover) {
+    background: #f8fafc !important;
+}
+
+.custom-data-table :deep(tbody td) {
+    padding: 20px 16px;
+    height: 72px;
+}
+
+.pixel-id-code {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    background: #f1f5f9;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+/* Events Count Badges */
+.events-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.count-badge {
+    font-weight: 500;
+    font-size: 0.8em;
+}
+
+.count-badge.standard {
+    background: #1877f2 !important;
+    color: white !important;
+}
+
+.count-badge.custom {
+    background: #10b981 !important;
+    color: white !important;
+}
+
+.count-badge.conversion {
+    background: #f59e0b !important;
+    color: white !important;
+}
+
+/* Table Actions */
+.table-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    transition: all 0.3s ease;
+}
+
+.action-btn.edit {
+    background: #f0f9ff !important;
+    color: #0369a1 !important;
+}
+
+.action-btn.delete {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+}
+
+.action-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 80px 32px;
+    color: #6b7280;
+}
+
+.empty-icon {
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #374151;
+}
+
+.empty-text {
+    font-size: 1em;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-action {
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* Sidebar Styling */
 .pixel-sidebar {
     z-index: 2010 !important;
     position: fixed !important;
@@ -707,8 +1058,8 @@ onMounted(() => {
 }
 
 .sidebar-header {
-    padding: 24px;
-    border-bottom: 1px solid rgba(0,0,0,0.12);
+    padding: 24px 32px;
+    border-bottom: 1px solid #e2e8f0;
     background: #f8fafc;
     flex-shrink: 0;
 }
@@ -718,10 +1069,10 @@ onMounted(() => {
 }
 
 .sidebar-content {
-    padding: 24px;
+    padding: 32px;
     flex: 1;
     overflow-y: auto;
-    height: 0; /* Force flex behavior */
+    height: 0;
 }
 
 .step-navigation {
@@ -733,19 +1084,19 @@ onMounted(() => {
 }
 
 .step-navigation-buttons {
-    border-top: 1px solid rgba(0,0,0,0.12);
+    border-top: 1px solid #e2e8f0;
     padding-top: 16px;
 }
 
 .guided-setup h3,
 .advanced-setup h3 {
-    color: #1a202c;
+    color: #111827;
     font-weight: 600;
 }
 
 .guided-setup h4,
 .advanced-setup h4 {
-    color: #2d3748;
+    color: #374151;
     font-weight: 500;
 }
 
@@ -760,5 +1111,32 @@ onMounted(() => {
 .v-stepper-header {
     box-shadow: none !important;
     padding: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .header-title {
+        font-size: 1.6em;
+    }
+    
+    .header-description {
+        font-size: 1em;
+    }
+    
+    .pixel-sidebar {
+        width: 100vw !important;
+    }
+    
+    .events-count {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
 }
 </style>
