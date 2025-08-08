@@ -9,6 +9,7 @@ const { authenticateToken, requireRole } = require('../../middleware/auth');
 const { validate } = require('../../middleware/validation');
 const websiteValidators = require('../../validators/websiteValidators');
 const websiteController = require('../../controllers/websiteController');
+const qualityController = require('../../controllers/qualityController');
 
 const router = express.Router();
 
@@ -65,5 +66,24 @@ router.route('/:websiteId/connection-status')
 
 router.route('/:websiteId/dashboard-stats')
     .get(validate(websiteValidators.getWebsiteSchema), websiteController.getDashboardStats);
+
+// --- Routes cho Quality Metrics và Data Validation ---
+router.route('/:websiteId/quality-metrics')
+    .get(validate(websiteValidators.getWebsiteSchema), qualityController.getQualityMetrics);
+
+router.route('/:websiteId/performance-metrics')
+    .get(validate(websiteValidators.getWebsiteSchema), qualityController.getPerformanceMetrics);
+
+router.route('/:websiteId/quality-alerts')
+    .get(validate(websiteValidators.getWebsiteSchema), qualityController.getQualityAlerts);
+
+router.route('/:websiteId/quality-alerts/:alertId/acknowledge')
+    .patch(validate(websiteValidators.getWebsiteSchema), qualityController.acknowledgeAlert);
+
+router.route('/:websiteId/event-distribution')
+    .get(validate(websiteValidators.getWebsiteSchema), qualityController.getEventDistribution);
+
+router.route('/:websiteId/data-source-health')
+    .get(validate(websiteValidators.getWebsiteSchema), qualityController.getDataSourceHealth);
 
 module.exports = router;

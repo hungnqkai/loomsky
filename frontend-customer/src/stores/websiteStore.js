@@ -16,6 +16,10 @@ export const useWebsiteStore = defineStore('website', () => {
   const dataMappings = ref([]);
   const connectionStatus = ref(null);
   const dashboardStats = ref(null);
+  // Quality metrics state
+  const qualityMetrics = ref(null);
+  const performanceMetrics = ref(null);
+  const qualityAlerts = ref([]);
   const loading = ref(false);
   const actionLoading = ref(false); // Loading riêng cho các hành động nhỏ
   const error = ref(null);
@@ -336,15 +340,218 @@ export const useWebsiteStore = defineStore('website', () => {
     ]);
   }
 
+  // === Quality Metrics Actions (NEW) ===
+  async function fetchQualityMetrics(websiteId, timeWindow = 60) {
+    try {
+      const response = await websiteService.getQualityMetrics(websiteId, timeWindow);
+      qualityMetrics.value = response.data.data;
+      return qualityMetrics.value;
+    } catch (err) {
+      console.error('Failed to load quality metrics:', err);
+      error.value = err.response?.data?.error || 'Cannot load quality metrics.';
+      return null;
+    }
+  }
+
+  async function fetchPerformanceMetrics(websiteId, timeWindow = 60) {
+    try {
+      const response = await websiteService.getPerformanceMetrics(websiteId, timeWindow);
+      performanceMetrics.value = response.data.data;
+      return performanceMetrics.value;
+    } catch (err) {
+      console.error('Failed to load performance metrics:', err);
+      error.value = err.response?.data?.error || 'Cannot load performance metrics.';
+      return null;
+    }
+  }
+
+  async function fetchQualityAlerts(websiteId, activeOnly = true) {
+    try {
+      const response = await websiteService.getQualityAlerts(websiteId, activeOnly);
+      qualityAlerts.value = response.data.data;
+      return qualityAlerts.value;
+    } catch (err) {
+      console.error('Failed to load quality alerts:', err);
+      error.value = err.response?.data?.error || 'Cannot load quality alerts.';
+      return null;
+    }
+  }
+
+  async function getEventDistribution(websiteId, timeWindow = 60) {
+    try {
+      const response = await websiteService.getEventDistribution(websiteId, timeWindow);
+      return response.data.data;
+    } catch (err) {
+      console.error('Failed to load event distribution:', err);
+      error.value = err.response?.data?.error || 'Cannot load event distribution.';
+      return null;
+    }
+  }
+
+  async function getDataSourceHealth(websiteId) {
+    try {
+      const response = await websiteService.getDataSourceHealth(websiteId);
+      return response.data.data;
+    } catch (err) {
+      console.error('Failed to load data source health:', err);
+      error.value = err.response?.data?.error || 'Cannot load data source health.';
+      return null;
+    }
+  }
+
+  async function generateQualityReport(websiteId, timeRange = '24h') {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      const response = await websiteService.generateQualityReport(websiteId, timeRange);
+      successMessage.value = 'Quality report generated successfully!';
+      return response.data.data;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Failed to generate quality report.';
+      return null;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
+  async function acknowledgeAlert(websiteId, alertId) {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      await websiteService.acknowledgeAlert(websiteId, alertId);
+      // Update local state
+      const alert = qualityAlerts.value.find(a => a.id === alertId);
+      if (alert) {
+        alert.acknowledged = true;
+        alert.acknowledged_at = new Date().toISOString();
+      }
+      successMessage.value = 'Alert acknowledged successfully!';
+      return true;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Failed to acknowledge alert.';
+      return false;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
+  // Comprehensive quality monitoring refresh
+  async function refreshQualityMonitoring(websiteId) {
+    loading.value = true;
+    clearMessages();
+    try {
+      await Promise.all([
+        fetchQualityMetrics(websiteId),
+        fetchPerformanceMetrics(websiteId),
+        fetchQualityAlerts(websiteId)
+      ]);
+    } catch (err) {
+      error.value = 'Failed to refresh quality monitoring data.';
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Real-time quality monitoring setup
+  function setupQualityMonitoring(websiteId, interval = 30000) {
+    const monitoringInterval = setInterval(async () => {
+      try {
+        await Promise.all([
+          fetchQualityMetrics(websiteId, 60),
+          fetchQualityAlerts(websiteId, true) // Only active alerts
+        ]);
+      } catch (err) {
+        console.error('Quality monitoring update failed:', err);
+      }
+    }, interval);
+
+    // Return cleanup function
+    return () => clearInterval(monitoringInterval);
+  }
+
+  // Calculate overall quality score from metrics
+  function getOverallQualityScore() {
+    if (!qualityMetrics.value) return 0;
+    
+    const metrics = qualityMetrics.value;
+    const scores = [
+      metrics.standardization_score || 0,
+      metrics.data_completeness_score || 0,
+      metrics.facebook_capi_score || 0
+    ].filter(score => score > 0);
+    
+    return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : 0;
+  }
+
+  // Get critical alerts count
+  function getCriticalAlertsCount() {
+    if (!qualityAlerts.value) return 0;
+    return qualityAlerts.value.filter(alert => 
+      alert.severity === 'critical' && 
+      alert.active && 
+      !alert.acknowledged
+    ).length;
+  }
+
+  // Get quality status color
+  function getQualityStatusColor() {
+    const score = getOverallQualityScore();
+    if (score >= 90) return 'green';
+    if (score >= 70) return 'orange';
+    return 'red';
+  }
+
+  // Export quality data
+  async function exportQualityData(websiteId, format = 'json', timeRange = '24h') {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      const response = await websiteService.exportQualityData(websiteId, format, timeRange);
+      
+      // Create download
+      const blob = new Blob([JSON.stringify(response.data.data, null, 2)], { 
+        type: 'application/json' 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `quality-data-${websiteId}-${Date.now()}.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      successMessage.value = 'Quality data exported successfully!';
+      return true;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Failed to export quality data.';
+      return false;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
   return {
+    // State
     websites, currentWebsite, pixels, eventFilters, blacklist, dataMappings,
-    connectionStatus, dashboardStats,
+    connectionStatus, dashboardStats, qualityMetrics, performanceMetrics, qualityAlerts,
     loading, actionLoading, error, successMessage,
+    
+    // Core actions
     clearMessages, fetchWebsites, createWebsite, fetchWebsiteById, deleteWebsite,
     fetchPixels, addPixel, updatePixel, deletePixel,
     fetchEventFilters, addEventFilter, deleteEventFilter,
     fetchBlacklist, addBlacklistEntry, deleteBlacklistEntry,
     fetchDataMappings, initSetupSession, addDataMapping, deleteDataMapping,
-    fetchConnectionStatus, fetchDashboardStats, refreshWebsiteStatus
+    fetchConnectionStatus, fetchDashboardStats, refreshWebsiteStatus,
+    
+    // Quality metrics actions
+    fetchQualityMetrics, fetchPerformanceMetrics, fetchQualityAlerts,
+    getEventDistribution, getDataSourceHealth, generateQualityReport,
+    acknowledgeAlert, refreshQualityMonitoring, setupQualityMonitoring,
+    
+    // Computed helpers
+    getOverallQualityScore, getCriticalAlertsCount, getQualityStatusColor,
+    
+    // Utility actions
+    exportQualityData
   };
 });

@@ -223,16 +223,45 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
                         <div v-if="currentStep === 2" class="step-section">
                             <h3 class="text-h6 mb-3">Standard Events</h3>
                             <p class="text-body-2 text-medium-emphasis mb-4">
-                                Select which Facebook standard events you want to track automatically.
+                                Select which Facebook standard events you want to track automatically. All events are Facebook CAPI compatible.
                             </p>
                             <v-row>
                                 <v-col v-for="event in standardEvents" :key="event.value" cols="12" md="6">
-                                    <v-checkbox 
-                                        v-model="editedItem.tracking_config.standard_events"
-                                        :value="event.value"
-                                        :label="event.title"
-                                        hide-details
-                                    ></v-checkbox>
+                                    <div class="event-option">
+                                        <v-checkbox 
+                                            v-model="editedItem.tracking_config.standard_events"
+                                            :value="event.value"
+                                            hide-details
+                                            class="event-checkbox"
+                                        >
+                                            <template v-slot:label>
+                                                <div class="event-label-content">
+                                                    <div class="event-title-row">
+                                                        <v-icon :icon="event.icon" size="16" class="event-icon"></v-icon>
+                                                        <span class="event-title">{{ event.title }}</span>
+                                                        <v-chip 
+                                                            v-if="event.facebook_event" 
+                                                            size="x-small" 
+                                                            color="blue" 
+                                                            class="facebook-chip"
+                                                        >
+                                                            <v-icon icon="mdi-facebook" size="10"></v-icon>
+                                                            CAPI
+                                                        </v-chip>
+                                                        <v-chip 
+                                                            v-if="event.complexity"
+                                                            size="x-small" 
+                                                            :color="getComplexityColor(event.complexity)"
+                                                            class="complexity-chip"
+                                                        >
+                                                            {{ event.complexity }}
+                                                        </v-chip>
+                                                    </div>
+                                                    <div class="event-description">{{ event.description }}</div>
+                                                </div>
+                                            </template>
+                                        </v-checkbox>
+                                    </div>
                                 </v-col>
                             </v-row>
                         </div>
@@ -241,35 +270,81 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
                         <div v-if="currentStep === 3" class="step-section">
                             <h3 class="text-h6 mb-3">Custom Events</h3>
                             <p class="text-body-2 text-medium-emphasis mb-4">
-                                Choose custom events to track user engagement and behavior.
+                                Choose custom events to track user engagement and behavior. These are custom events specific to LoomSky.
                             </p>
                             
                             <!-- Scroll Depth Events -->
                             <div class="mb-4">
-                                <h4 class="text-subtitle-1 mb-2">Scroll Depth Tracking</h4>
+                                <h4 class="text-subtitle-1 mb-2">
+                                    <v-icon icon="mdi-arrow-down" size="18" class="mr-2"></v-icon>
+                                    Scroll Depth Tracking
+                                </h4>
                                 <v-row>
                                     <v-col v-for="scrollEvent in scrollDepthEvents" :key="scrollEvent.value" cols="12" md="6">
-                                        <v-checkbox 
-                                            v-model="editedItem.tracking_config.custom_events"
-                                            :value="scrollEvent.value"
-                                            :label="scrollEvent.title"
-                                            hide-details
-                                        ></v-checkbox>
+                                        <div class="event-option">
+                                            <v-checkbox 
+                                                v-model="editedItem.tracking_config.custom_events"
+                                                :value="scrollEvent.value"
+                                                hide-details
+                                                class="event-checkbox"
+                                            >
+                                                <template v-slot:label>
+                                                    <div class="event-label-content">
+                                                        <div class="event-title-row">
+                                                            <v-icon :icon="scrollEvent.icon" size="16" class="event-icon"></v-icon>
+                                                            <span class="event-title">{{ scrollEvent.title }}</span>
+                                                            <v-chip 
+                                                                v-if="!scrollEvent.facebook_compatible"
+                                                                size="x-small" 
+                                                                color="grey" 
+                                                                class="custom-chip"
+                                                            >
+                                                                Custom
+                                                            </v-chip>
+                                                        </div>
+                                                        <div class="event-description">{{ scrollEvent.description }}</div>
+                                                    </div>
+                                                </template>
+                                            </v-checkbox>
+                                        </div>
                                     </v-col>
                                 </v-row>
                             </div>
 
                             <!-- Time Engagement Events -->
                             <div>
-                                <h4 class="text-subtitle-1 mb-2">Time Engagement Tracking</h4>
+                                <h4 class="text-subtitle-1 mb-2">
+                                    <v-icon icon="mdi-timer-outline" size="18" class="mr-2"></v-icon>
+                                    Time Engagement Tracking
+                                </h4>
                                 <v-row>
                                     <v-col v-for="timeEvent in timeEngagementEvents" :key="timeEvent.value" cols="12" md="6">
-                                        <v-checkbox 
-                                            v-model="editedItem.tracking_config.custom_events"
-                                            :value="timeEvent.value"
-                                            :label="timeEvent.title"
-                                            hide-details
-                                        ></v-checkbox>
+                                        <div class="event-option">
+                                            <v-checkbox 
+                                                v-model="editedItem.tracking_config.custom_events"
+                                                :value="timeEvent.value"
+                                                hide-details
+                                                class="event-checkbox"
+                                            >
+                                                <template v-slot:label>
+                                                    <div class="event-label-content">
+                                                        <div class="event-title-row">
+                                                            <v-icon :icon="timeEvent.icon" size="16" class="event-icon"></v-icon>
+                                                            <span class="event-title">{{ timeEvent.title }}</span>
+                                                            <v-chip 
+                                                                v-if="!timeEvent.facebook_compatible"
+                                                                size="x-small" 
+                                                                color="grey" 
+                                                                class="custom-chip"
+                                                            >
+                                                                Custom
+                                                            </v-chip>
+                                                        </div>
+                                                        <div class="event-description">{{ timeEvent.description }}</div>
+                                                    </div>
+                                                </template>
+                                            </v-checkbox>
+                                        </div>
                                     </v-col>
                                 </v-row>
                             </div>
@@ -284,15 +359,47 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
                             
                             <!-- Conversion Events -->
                             <div class="mb-4">
-                                <h4 class="text-subtitle-1 mb-2">Conversion Events</h4>
+                                <h4 class="text-subtitle-1 mb-2">
+                                    <v-icon icon="mdi-target" size="18" class="mr-2"></v-icon>
+                                    Conversion Events
+                                </h4>
                                 <v-row>
                                     <v-col v-for="event in availableConversionEvents" :key="event.value" cols="12" md="6">
-                                        <v-checkbox 
-                                            v-model="editedItem.tracking_config.conversion_events"
-                                            :value="event.value"
-                                            :label="event.title"
-                                            hide-details
-                                        ></v-checkbox>
+                                        <div class="event-option">
+                                            <v-checkbox 
+                                                v-model="editedItem.tracking_config.conversion_events"
+                                                :value="event.value"
+                                                hide-details
+                                                class="event-checkbox"
+                                            >
+                                                <template v-slot:label>
+                                                    <div class="event-label-content">
+                                                        <div class="event-title-row">
+                                                            <v-icon :icon="event.icon" size="16" class="event-icon"></v-icon>
+                                                            <span class="event-title">{{ event.title }}</span>
+                                                            <v-chip 
+                                                                v-if="event.facebook_event" 
+                                                                size="x-small" 
+                                                                color="blue" 
+                                                                class="facebook-chip"
+                                                            >
+                                                                <v-icon icon="mdi-facebook" size="10"></v-icon>
+                                                                CAPI
+                                                            </v-chip>
+                                                            <v-chip 
+                                                                v-if="event.complexity"
+                                                                size="x-small" 
+                                                                :color="getComplexityColor(event.complexity)"
+                                                                class="complexity-chip"
+                                                            >
+                                                                {{ event.complexity }}
+                                                            </v-chip>
+                                                        </div>
+                                                        <div class="event-description">{{ event.description }}</div>
+                                                    </div>
+                                                </template>
+                                            </v-checkbox>
+                                        </div>
                                     </v-col>
                                 </v-row>
                             </div>
@@ -604,6 +711,15 @@ File: src/components/tracking/PixelManager.vue (REDESIGNED with Sidebar)
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useWebsiteStore } from '@/stores/websiteStore';
+import { 
+  STANDARD_EVENTS, 
+  EVENT_CATEGORIES,
+  getStandardListEvents,
+  getEventsByGroup,
+  getFacebookCompatibleEvents,
+  migrateEventName,
+  isFacebookCompatible
+} from '@/constants/eventStandards';
 import _ from 'lodash';
 
 const props = defineProps({
@@ -635,11 +751,11 @@ const guidedSteps = [
     { step: 5, title: 'Activation Rules', subtitle: 'When to Fire' }
 ];
 
-// Default tracking configuration
+// Default tracking configuration với standardized events
 const defaultTrackingConfig = {
-  standard_events: ['PageView'],
-  custom_events: [],
-  conversion_events: [],
+  standard_events: ['PageView'], // Only PageView by default
+  custom_events: [], // Empty by default
+  conversion_events: [], // Empty by default
   send_page_view: true,
   send_to_conversion_api: true,
   send_to_pixel: true,
@@ -661,49 +777,57 @@ const rules = {
     numeric: v => /^\d+$/.test(v) || 'Pixel ID should contain only numbers.' 
 };
 
-// Facebook Standard Events
-const standardEvents = [
-  { title: 'Page View', value: 'PageView' },
-  { title: 'View Content', value: 'ViewContent' },
-  { title: 'Search', value: 'Search' },
-  { title: 'Add to Cart', value: 'AddToCart' },
-  { title: 'Add to Wishlist', value: 'AddToWishlist' },
-  { title: 'Initiate Checkout', value: 'InitiateCheckout' },
-  { title: 'Add Payment Info', value: 'AddPaymentInfo' },
-  { title: 'Purchase', value: 'Purchase' },
-  { title: 'Lead', value: 'Lead' },
-  { title: 'Complete Registration', value: 'CompleteRegistration' },
-  { title: 'Contact', value: 'Contact' },
-  { title: 'Find Location', value: 'FindLocation' }
-];
+// Standardized Events với enhanced metadata
+const standardEvents = computed(() => {
+  return getStandardListEvents()
+    .filter(event => event.facebook_event !== null) // Only Facebook compatible events
+    .map(event => ({
+      title: event.title,
+      value: event.name,
+      icon: event.icon,
+      description: event.description,
+      facebook_event: event.facebook_event,
+      category: event.category.name,
+      complexity: event.ui_metadata.complexity
+    }));
+});
 
-// Predefined Custom Events
-const scrollDepthEvents = [
-  { title: '25% Scroll Depth', value: 'scroll_25' },
-  { title: '50% Scroll Depth', value: 'scroll_50' },
-  { title: '75% Scroll Depth', value: 'scroll_75' },
-  { title: '90% Scroll Depth', value: 'scroll_90' }
-];
+// Enhanced Custom Events với categories
+const scrollDepthEvents = computed(() => {
+  return getEventsByGroup('Scroll Tracking').map(event => ({
+    title: event.title,
+    value: event.name,
+    icon: event.icon,
+    description: event.description,
+    facebook_compatible: event.facebook_event !== null
+  }));
+});
 
-const timeEngagementEvents = [
-  { title: '10 Seconds Time', value: 'time_10s' },
-  { title: '30 Seconds Time', value: 'time_30s' },
-  { title: '1 Minute Time', value: 'time_1m' },
-  { title: '1.5 Minutes Time', value: 'time_1_5m' },
-  { title: '2 Minutes Time', value: 'time_2m' },
-  { title: '3 Minutes Time', value: 'time_3m' },
-  { title: '5 Minutes Time', value: 'time_5m' }
-];
+const timeEngagementEvents = computed(() => {
+  return getEventsByGroup('Time Engagement').map(event => ({
+    title: event.title,
+    value: event.name,
+    icon: event.icon,
+    description: event.description,
+    facebook_compatible: event.facebook_event !== null
+  }));
+});
 
-// Available Conversion Events
-const availableConversionEvents = [
-  { title: 'Purchase', value: 'Purchase' },
-  { title: 'Lead', value: 'Lead' },
-  { title: 'Complete Registration', value: 'CompleteRegistration' },
-  { title: 'Add to Cart', value: 'AddToCart' },
-  { title: 'Initiate Checkout', value: 'InitiateCheckout' },
-  { title: 'Contact', value: 'Contact' }
-];
+// Conversion Events với enhanced metadata
+const availableConversionEvents = computed(() => {
+  return Object.values(STANDARD_EVENTS)
+    .filter(event => event.category.key === 'conversion' || event.category.key === 'ecommerce')
+    .filter(event => event.facebook_event !== null) // Only Facebook compatible
+    .map(event => ({
+      title: event.title,
+      value: event.name,
+      icon: event.icon,
+      description: event.description,
+      facebook_event: event.facebook_event,
+      category: event.category.name,
+      complexity: event.ui_metadata.complexity
+    }));
+});
 
 // Enhanced Rule Types
 const enhancedRuleTypes = [
@@ -726,10 +850,12 @@ const removeRule = (index) => {
     editedItem.activation_rules.splice(index, 1);
 };
 
-// Dialog/Sidebar methods
+// Dialog/Sidebar methods với migration support  
 const openSidebar = (item) => {
     if (item) {
-        const itemData = _.cloneDeep(item);
+        // Apply migration before opening
+        const migratedItem = migratePixelEvents(item);
+        const itemData = _.cloneDeep(migratedItem);
         // Ensure tracking_config exists with defaults
         if (!itemData.tracking_config) {
             itemData.tracking_config = _.cloneDeep(defaultTrackingConfig);
@@ -797,6 +923,47 @@ const getConversionEventsCount = (item) => {
         ? item.tracking_config.conversion_events.length 
         : 0;
 };
+
+// Helper methods cho UI enhancements
+const getComplexityColor = (complexity) => {
+    switch (complexity) {
+        case 'basic': return 'green';
+        case 'intermediate': return 'orange';
+        case 'advanced': return 'red';
+        default: return 'grey';
+    }
+};
+
+// Migration methods cho existing pixel configurations
+const migratePixelEvents = (pixelConfig) => {
+    if (!pixelConfig?.tracking_config) return pixelConfig;
+    
+    const migratedConfig = { ...pixelConfig };
+    
+    // Migrate standard events
+    if (migratedConfig.tracking_config.standard_events) {
+        migratedConfig.tracking_config.standard_events = migratedConfig.tracking_config.standard_events
+            .map(eventName => migrateEventName(eventName))
+            .filter(eventName => eventName); // Remove any null/undefined results
+    }
+    
+    // Migrate custom events
+    if (migratedConfig.tracking_config.custom_events) {
+        migratedConfig.tracking_config.custom_events = migratedConfig.tracking_config.custom_events
+            .map(eventName => migrateEventName(eventName))
+            .filter(eventName => eventName);
+    }
+    
+    // Migrate conversion events
+    if (migratedConfig.tracking_config.conversion_events) {
+        migratedConfig.tracking_config.conversion_events = migratedConfig.tracking_config.conversion_events
+            .map(eventName => migrateEventName(eventName))
+            .filter(eventName => eventName);
+    }
+    
+    return migratedConfig;
+};
+
 
 // Load data on mount
 onMounted(() => {
@@ -1145,5 +1312,118 @@ onMounted(() => {
 
 .v-stepper-item__subtitle {
     text-align: center;
+}
+
+/* Enhanced Event Options Styling */
+.event-option {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.event-option:hover {
+    border-color: #3b82f6;
+    background: #f0f9ff;
+    transform: translateY(-1px);
+}
+
+.event-label-content {
+    width: 100%;
+}
+
+.event-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.event-icon {
+    color: #6b7280;
+}
+
+.event-title {
+    font-weight: 500;
+    color: #111827;
+    flex: 1;
+}
+
+.facebook-chip {
+    background: #1877f2 !important;
+    color: white !important;
+}
+
+.custom-chip {
+    background: #6b7280 !important;
+    color: white !important;
+}
+
+.complexity-chip {
+    opacity: 0.8;
+}
+
+.event-description {
+    font-size: 0.875rem;
+    color: #6b7280;
+    line-height: 1.4;
+    margin-left: 24px;
+}
+
+.event-checkbox {
+    margin: 0;
+}
+
+.event-checkbox :deep(.v-input__control) {
+    height: auto;
+}
+
+.event-checkbox :deep(.v-selection-control) {
+    min-height: auto;
+    align-items: flex-start;
+}
+
+.event-checkbox :deep(.v-selection-control__wrapper) {
+    height: 20px;
+    margin-right: 8px;
+}
+
+/* Event categories styling */
+.event-category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.event-category-icon {
+    padding: 4px;
+    border-radius: 4px;
+    background: #f3f4f6;
+}
+
+.event-stats {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.stat-number {
+    font-weight: 600;
+    color: #111827;
 }
 </style>

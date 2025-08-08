@@ -1,0 +1,121 @@
+[
+  {
+    "name": "LoomSky Tracking",
+    "settings": [
+      {
+        "type": "header",
+        "content": "LoomSky Configuration"
+      },
+      {
+        "type": "paragraph",
+        "content": "Configure LoomSky tracking for customer journey analytics and Facebook CAPI integration. [Learn more](https://docs.loomsky.com/shopify)"
+      },
+      {
+        "type": "text",
+        "id": "loomsky_api_key",
+        "label": "LoomSky API Key",
+        "info": "Find your API key in your LoomSky dashboard",
+        "placeholder": "ls_xxxxxxxxxxxxxxxxx"
+      },
+      {
+        "type": "text",
+        "id": "loomsky_sdk_url",
+        "label": "SDK URL",
+        "default": "https://sdk.loomsky.com/loomsky.min.js",
+        "info": "Leave default unless instructed otherwise"
+      },
+      {
+        "type": "header",
+        "content": "Advanced Settings"
+      },
+      {
+        "type": "checkbox",
+        "id": "loomsky_debug_mode",
+        "label": "Enable Debug Mode",
+        "info": "Show data layer output in browser console (development only)",
+        "default": false
+      },
+      {
+        "type": "checkbox",
+        "id": "loomsky_privacy_mode",
+        "label": "Enhanced Privacy Mode",
+        "info": "Additional PII protection measures",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "Event Tracking"
+      },
+      {
+        "type": "checkbox",
+        "id": "loomsky_track_product_views",
+        "label": "Track Product Views",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "loomsky_track_cart_events",
+        "label": "Track Cart Events",
+        "info": "Add to cart, remove from cart, checkout initiation",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "loomsky_track_search",
+        "label": "Track Search Events",
+        "info": "Search queries and results",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "loomsky_track_collection_views",
+        "label": "Track Collection Views",
+        "info": "Category and collection page views",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "Data Collection"
+      },
+      {
+        "type": "checkbox",
+        "id": "loomsky_collect_customer_data",
+        "label": "Collect Customer Data",
+        "info": "Customer information for personalization (GDPR compliant)",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "loomsky_collect_product_variants",
+        "label": "Collect Product Variants",
+        "info": "Track variant-specific data for variable products",
+        "default": true
+      },
+      {
+        "type": "select",
+        "id": "loomsky_data_retention",
+        "label": "Data Retention Period",
+        "options": [
+          {
+            "value": "30",
+            "label": "30 days"
+          },
+          {
+            "value": "90",
+            "label": "90 days"
+          },
+          {
+            "value": "365",
+            "label": "1 year"
+          },
+          {
+            "value": "730",
+            "label": "2 years"
+          }
+        ],
+        "default": "365",
+        "info": "How long to retain customer journey data"
+      }
+    ]
+  }
+]

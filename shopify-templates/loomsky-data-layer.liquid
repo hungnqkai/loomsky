@@ -1,0 +1,202 @@
+{% comment %}
+File: shopify-templates/loomsky-data-layer.liquid (CONCEPT)
+Shopify Liquid Template for LoomSky Data Layer Generation
+
+IMPLEMENTATION STRATEGY:
+This template should be added to theme.liquid or included in specific page templates.
+It generates rich data layer from Shopify's available data.
+
+USAGE:
+1. Add to theme.liquid before closing </head> tag
+2. Or include in specific templates: {% include 'loomsky-data-layer' %}
+3. Configure LoomSky API key in theme settings
+
+PRIORITY SYSTEM:
+- Platform data (medium priority) - can be overridden by manual mapping
+- Provides rich Shopify data automatically
+{% endcomment %}
+
+{% comment %} LoomSky Configuration {% endcomment %}
+{% assign loomsky_api_key = settings.loomsky_api_key %}
+{% assign loomsky_sdk_url = settings.loomsky_sdk_url | default: 'https://sdk.loomsky.com/loomsky.min.js' %}
+
+{% if loomsky_api_key != blank %}
+
+<script type="text/javascript">
+window.loomskyDataLayer = {
+  platform: 'shopify',
+  page_type: '{{ template.name }}',
+  
+  {% comment %} User Data {% endcomment %}
+  user: {
+    is_logged_in: {% if customer %}true{% else %}false{% endif %},
+    user_id: {% if customer %}'{{ customer.id }}'{% else %}null{% endif %},
+    email: {% if customer %}'{{ customer.email | json }}'{% else %}null{% endif %},
+    role: {% if customer %}'customer'{% else %}'guest'{% endif %}
+    {% if customer %}
+    ,first_name: {{ customer.first_name | json }},
+    last_name: {{ customer.last_name | json }},
+    phone: {% if customer.phone %}{{ customer.phone | json }}{% else %}null{% endif %},
+    accepts_marketing: {{ customer.accepts_marketing }},
+    orders_count: {{ customer.orders_count }},
+    total_spent: {{ customer.total_spent | money_without_currency }}
+    {% endif %}
+  },
+
+  {% comment %} E-commerce Data - Context Dependent {% endcomment %}
+  ecommerce: {
+    currency: {{ cart.currency.iso_code | json }},
+    
+    {% comment %} Product Page Data {% endcomment %}
+    {% if template.name == 'product' %}
+    product_id: {{ product.id | json }},
+    product_name: {{ product.title | json }},
+    product_price: {{ product.price | money_without_currency }},
+    product_compare_price: {% if product.compare_at_price %}{{ product.compare_at_price | money_without_currency }}{% else %}null{% endif %},
+    product_vendor: {{ product.vendor | json }},
+    product_type: {{ product.type | json }},
+    product_category: {% if product.type %}{{ product.type | json }}{% else %}null{% endif %},
+    product_tags: {{ product.tags | json }},
+    product_handle: {{ product.handle | json }},
+    product_url: {{ product.url | json }},
+    product_image: {% if product.featured_image %}{{ product.featured_image | img_url: 'master' | json }}{% else %}null{% endif %},
+    product_available: {{ product.available }},
+    product_variants: [
+      {% for variant in product.variants %}
+      {
+        id: {{ variant.id }},
+        title: {{ variant.title | json }},
+        price: {{ variant.price | money_without_currency }},
+        sku: {{ variant.sku | json }},
+        available: {{ variant.available }},
+        inventory_quantity: {% if variant.inventory_quantity %}{{ variant.inventory_quantity }}{% else %}null{% endif %}
+      }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ],
+    {% endif %}
+
+    {% comment %} Cart Data {% endcomment %}
+    {% if cart.item_count > 0 %}
+    cart_total: {{ cart.total_price | money_without_currency }},
+    cart_subtotal: {{ cart.total_price | money_without_currency }},
+    cart_items_count: {{ cart.item_count }},
+    cart_items: [
+      {% for item in cart.items %}
+      {
+        product_id: {{ item.product_id }},
+        variant_id: {{ item.variant_id }},
+        product_name: {{ item.product.title | json }},
+        variant_title: {{ item.variant.title | json }},
+        price: {{ item.price | money_without_currency }},
+        quantity: {{ item.quantity }},
+        line_price: {{ item.line_price | money_without_currency }},
+        sku: {{ item.sku | json }},
+        vendor: {{ item.vendor | json }},
+        product_type: {{ item.product.type | json }},
+        url: {{ item.url | json }}
+      }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ],
+    {% else %}
+    cart_total: 0,
+    cart_subtotal: 0,
+    cart_items_count: 0,
+    cart_items: [],
+    {% endif %}
+
+    {% comment %} Collection Page Data {% endcomment %}
+    {% if template.name == 'collection' %}
+    collection_id: {{ collection.id }},
+    collection_title: {{ collection.title | json }},
+    collection_handle: {{ collection.handle | json }},
+    collection_products_count: {{ collection.products_count }},
+    {% endif %}
+
+    {% comment %} Search Results Data {% endcomment %}
+    {% if template.name == 'search' %}
+    search_query: {{ search.terms | json }},
+    search_results_count: {{ search.results_count }},
+    {% endif %}
+
+    {% comment %} Order Data (Thank You Page) {% endcomment %}
+    {% if template.name == 'customers/order' or checkout.order %}
+    {% assign order = order | default: checkout.order %}
+    order_id: {{ order.order_number | json }},
+    order_total: {{ order.total_price | money_without_currency }},
+    order_subtotal: {{ order.subtotal_price | money_without_currency }},
+    order_tax: {{ order.tax_price | money_without_currency }},
+    order_shipping: {{ order.shipping_price | money_without_currency }},
+    order_discount: {% if order.total_discounts %}{{ order.total_discounts | money_without_currency }}{% else %}0{% endif %},
+    order_items: [
+      {% for line_item in order.line_items %}
+      {
+        product_id: {{ line_item.product_id }},
+        variant_id: {{ line_item.variant_id }},
+        product_name: {{ line_item.title | json }},
+        price: {{ line_item.price | money_without_currency }},
+        quantity: {{ line_item.quantity }},
+        line_price: {{ line_item.line_price | money_without_currency }},
+        sku: {{ line_item.sku | json }},
+        vendor: {{ line_item.vendor | json }}
+      }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ],
+    {% endif %}
+
+    {% comment %} Default empty values {% endcomment %}
+    {% unless template.name == 'product' %}
+    product_id: null,
+    product_name: null,
+    product_price: null,
+    product_vendor: null,
+    product_type: null,
+    product_category: null,
+    {% endunless %}
+
+    {% unless template.name == 'collection' %}
+    collection_id: null,
+    collection_title: null,
+    collection_handle: null,
+    {% endunless %}
+
+    {% unless template.name == 'search' %}
+    search_query: null,
+    search_results_count: null,
+    {% endunless %}
+
+    {% unless template.name == 'customers/order' or checkout.order %}
+    order_id: null,
+    order_total: null,
+    order_subtotal: null,
+    order_tax: null,
+    order_shipping: null,
+    order_items: [],
+    {% endunless %}
+  },
+
+  {% comment %} Shopify-Specific Data {% endcomment %}
+  shopify: {
+    shop_id: {{ shop.id }},
+    shop_name: {{ shop.name | json }},
+    shop_domain: {{ shop.domain | json }},
+    shop_currency: {{ shop.currency | json }},
+    shop_money_format: {{ shop.money_format | json }},
+    template_name: {{ template.name | json }},
+    template_suffix: {% if template.suffix %}{{ template.suffix | json }}{% else %}null{% endif %},
+    theme_id: {{ theme.id }},
+    locale: {{ request.locale.iso_code | json }},
+    page_title: {{ page_title | json }},
+    canonical_url: {{ canonical_url | json }}
+  }
+};
+
+{% comment %} Debug Mode - Only in development {% endcomment %}
+{% if settings.loomsky_debug_mode %}
+console.log('LoomSky Shopify Data Layer:', window.loomskyDataLayer);
+{% endif %}
+</script>
+
+{% comment %} Load LoomSky SDK {% endcomment %}
+<script async src="{{ loomsky_sdk_url }}" data-api-key="{{ loomsky_api_key }}"></script>
+
+{% endif %}

@@ -1160,7 +1160,7 @@ const finishSetup = () => {
   background: rgba(255,255,255,0.15);
   backdrop-filter: blur(10px);
   border-radius: 8px;
-  padding: 16px;
+  padding: 10px;
   text-align: center;
   border: 1px solid rgba(255,255,255,0.2);
 }

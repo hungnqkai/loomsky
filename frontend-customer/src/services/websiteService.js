@@ -40,6 +40,31 @@ const websiteService = {
   // === Connection Status & Dashboard Stats (MỚI) ===
   getConnectionStatus: (websiteId) => api.get(`/websites/${websiteId}/connection-status`),
   getDashboardStats: (websiteId) => api.get(`/websites/${websiteId}/dashboard-stats`),
+
+  // === Quality Metrics (NEW) ===
+  getQualityMetrics: (websiteId, timeWindow = 60) => 
+    api.get(`/websites/${websiteId}/quality-metrics?timeWindow=${timeWindow}`),
+  
+  getPerformanceMetrics: (websiteId, timeWindow = 60) => 
+    api.get(`/websites/${websiteId}/performance-metrics?timeWindow=${timeWindow}`),
+  
+  getQualityAlerts: (websiteId, activeOnly = true) => 
+    api.get(`/websites/${websiteId}/quality-alerts?activeOnly=${activeOnly}`),
+  
+  getEventDistribution: (websiteId, timeWindow = 60) => 
+    api.get(`/websites/${websiteId}/event-distribution?timeWindow=${timeWindow}`),
+  
+  getDataSourceHealth: (websiteId) => 
+    api.get(`/websites/${websiteId}/data-source-health`),
+  
+  generateQualityReport: (websiteId, timeRange = '24h') => 
+    api.post(`/websites/${websiteId}/quality-report`, { timeRange }),
+  
+  acknowledgeAlert: (websiteId, alertId) => 
+    api.patch(`/websites/${websiteId}/quality-alerts/${alertId}/acknowledge`),
+  
+  exportQualityData: (websiteId, format = 'json', timeRange = '24h') => 
+    api.get(`/websites/${websiteId}/quality-data/export?format=${format}&timeRange=${timeRange}`),
 };
 
 export default websiteService;
