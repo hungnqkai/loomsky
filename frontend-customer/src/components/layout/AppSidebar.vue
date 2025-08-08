@@ -84,7 +84,7 @@ defineProps({
 // Fix sidebar positioning
 .fixed-sidebar {
   position: fixed !important;
-  z-index: 1004 !important;
+  z-index: 1006 !important;
   height: 100vh !important;
 }
 

@@ -1,19 +1,24 @@
+// File: sdk/src/core.js (FIX DEBUG METHODS)
 /*
-File: sdk/src/core.js (ĐÃ NÂNG CẤP)
-- Tích hợp sessionStorage để duy trì Chế độ Thiết lập qua nhiều trang.
+SOLUTION: Expose debug methods ra global window object
 */
+
 import Identity from './modules/identity';
 import EventListener from './modules/eventListener';
 import ApiService from './utils/api';
 import MapperLoader from './modules/mapperLoader';
 
-// (MỚI) Key để lưu trữ trong sessionStorage
 const SESSION_STORAGE_KEY = 'loomskySetupSession';
 
 class Core {
     constructor() {
         console.log('LoomSky SDK: Core initializing...');
         this.apiKey = this.getApiKey();
+        
+        // Store references to main components
+        this.eventListener = null;
+        this.identity = null;
+        this.config = null;
         
         if (this.apiKey) {
             this.api = new ApiService(this.apiKey);
@@ -24,16 +29,11 @@ class Core {
         return document.currentScript?.getAttribute('data-api-key') || null;
     }
 
-    /**
-     * (CẬP NHẬT) Lấy trạng thái thiết lập từ sessionStorage hoặc URL.
-     * @returns {{isSetupMode: boolean, token: string|null}}
-     */
     getSetupState() {
         try {
             const sessionData = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_KEY));
             if (sessionData && sessionData.isActive && sessionData.token) {
                 console.log('LoomSky SDK: Found active setup session in sessionStorage.');
-                // (MỚI) Thêm `fromSession` để báo cho MapperLoader biết
                 return { isSetupMode: true, token: sessionData.token, fromSession: true };
             }
         } catch (e) { /* ... */ }
@@ -50,11 +50,11 @@ class Core {
         return { isSetupMode: false, token: null };
     }
 
-    /**
-     * Điểm khởi đầu của SDK.
-     */
     async start() {
-        if (!this.apiKey) { /* ... */ return; }
+        if (!this.apiKey) { 
+            console.warn('LoomSky SDK: No API key found.');
+            return; 
+        }
 
         const setupState = this.getSetupState();
 
@@ -62,10 +62,8 @@ class Core {
             console.log('LoomSky SDK: Activating Mapper Mode...');
             const mapperLoader = new MapperLoader(this.api);
             
-            // (CẬP NHẬT) Truyền cả object `setupState` vào hàm activate
             const isActivated = await mapperLoader.activate(setupState);
             
-            // Chỉ lưu session nếu đây là lần đầu kích hoạt từ URL
             if (isActivated && !setupState.fromSession) {
                 const sessionData = { isActive: true, token: setupState.token };
                 sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
@@ -73,7 +71,6 @@ class Core {
             }
             
             if (isActivated) {
-                // Luôn lắng nghe sự kiện đóng, dù là từ URL hay session
                 window.addEventListener('message', (event) => {
                     if (event.data?.type === 'LOOMSKY_CLOSE_MAPPER') {
                         console.log('LoomSky SDK: Closing setup session.');
@@ -81,25 +78,141 @@ class Core {
                     }
                 });
             } else if (!setupState.fromSession) {
-                // Chỉ xóa session nếu token từ URL không hợp lệ
                 console.log('LoomSky SDK: Invalid token from URL, clearing session.');
                 sessionStorage.removeItem(SESSION_STORAGE_KEY);
             }
         } else {
-            // Chạy chế độ tracking thông thường
+            // Normal tracking mode
             console.log('LoomSky SDK: Starting normal tracking...');
-            const config = await this.api.getConfig();
+            this.config = await this.api.getConfig();
             
-            if (config) {
-                console.log('LoomSky SDK: Configuration loaded successfully.', config);
-                const identity = new Identity();
-                const eventListener = new EventListener(this.api);
-                eventListener.start(config, identity);
+            if (this.config) {
+                console.log('LoomSky SDK: Configuration loaded successfully.', this.config);
+                
+                // ✅ Store references to components
+                this.identity = new Identity();
+                this.eventListener = new EventListener(this.api);
+                this.eventListener.start(this.config, this.identity);
+                
+                // ✅ EXPOSE DEBUG METHODS TO GLOBAL SCOPE
+                this.exposeDebugMethods();
+                
                 console.log('LoomSky SDK: Started successfully.');
             } else {
                 console.error('LoomSky SDK: Could not load configuration. SDK is disabled.');
             }
         }
+    }
+
+    /**
+     * ✅ NEW: Expose debug methods to global window object
+     */
+    exposeDebugMethods() {
+        // Create global LoomSkySDK object with debug methods
+        window.LoomSkySDK = {
+            // Core info
+            version: '1.0.0',
+            loaded: true,
+            apiKey: this.apiKey?.substring(0, 8) + '...',
+            
+            // ✅ Debug Methods
+            testDataCollection: () => {
+                if (!this.eventListener) {
+                    return { error: 'EventListener not initialized' };
+                }
+                return this.eventListener.testDataCollection();
+            },
+
+            testSelector: (selector) => {
+                if (!this.eventListener) {
+                    return { error: 'EventListener not initialized' };
+                }
+                return this.eventListener.testSelector(selector);
+            },
+
+            getPerformanceMetrics: () => {
+                if (!this.eventListener) {
+                    return { error: 'EventListener not initialized' };
+                }
+                return this.eventListener.getPerformanceMetrics();
+            },
+
+            // ✅ Manual Event Triggering
+            handleEvent: (eventName, eventData = {}, recollectData = false) => {
+                if (!this.eventListener) {
+                    console.error('LoomSky SDK: EventListener not initialized');
+                    return false;
+                }
+                this.eventListener.handleEvent(eventName, eventData, recollectData);
+                return true;
+            },
+
+            // ✅ Current State Inspection
+            getCurrentData: () => {
+                return {
+                    manualData: this.eventListener?.manualData || {},
+                    config: this.config,
+                    identity: {
+                        userId: this.identity?.userId,
+                        sessionId: this.identity?.sessionId
+                    },
+                    isReady: this.eventListener?.isReady || false
+                };
+            },
+
+            // ✅ Re-collect Data
+            recollectData: () => {
+                if (!this.eventListener) {
+                    return { error: 'EventListener not initialized' };
+                }
+                this.eventListener._collectInitialData();
+                return { success: true, message: 'Data re-collected' };
+            },
+
+            // ✅ Get Available Methods
+            getMethods: () => {
+                return Object.keys(window.LoomSkySDK).filter(key => typeof window.LoomSkySDK[key] === 'function');
+            },
+
+            // ✅ Debug Info
+            getDebugInfo: () => {
+                return {
+                    sdk: {
+                        version: '1.0.0',
+                        loaded: true,
+                        apiKey: this.apiKey?.substring(0, 8) + '...',
+                        mode: 'tracking'
+                    },
+                    components: {
+                        eventListener: !!this.eventListener,
+                        identity: !!this.identity,
+                        config: !!this.config
+                    },
+                    config: this.config ? {
+                        websiteId: this.config.websiteId,
+                        dataMappings: this.config.dataMappings?.length || 0,
+                        pixels: this.config.pixels?.length || 0,
+                        planFeatures: this.config.planFeatures
+                    } : null,
+                    page: {
+                        url: window.location.href,
+                        title: document.title,
+                        timestamp: new Date().toISOString()
+                    }
+                };
+            }
+        };
+
+        // ✅ Also expose EventListener directly for advanced debugging
+        if (typeof window !== 'undefined' && window.localStorage?.getItem('loomsky_debug') === 'true') {
+            window.loomskyEventListener = this.eventListener;
+            window.loomskyIdentity = this.identity;
+            window.loomskyConfig = this.config;
+            console.log('🔧 LoomSky DEBUG: Advanced debug objects exposed to window');
+        }
+
+        console.log('🔧 LoomSky SDK: Debug methods exposed to window.LoomSkySDK');
+        console.log('💡 Available methods:', Object.keys(window.LoomSkySDK).filter(key => typeof window.LoomSkySDK[key] === 'function'));
     }
 }
 

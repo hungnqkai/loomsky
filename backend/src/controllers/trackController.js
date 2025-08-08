@@ -35,7 +35,7 @@ const trackController = {
             timestamp: timestamp || new Date().toISOString(),
             user_id: properties?.user?.ls_user_id,
             session_id: sessionId,
-            platform: properties?.platform || 'unknown',
+            platform: properties?.context?.platform || 'web',
             page_url: properties?.context?.page_url,
             user_agent: req.get('user-agent')
         });
