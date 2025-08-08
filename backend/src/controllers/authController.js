@@ -95,16 +95,25 @@ class AuthController {
         // Create client
         logger.info('Creating client:', { company_name, email });
         
-        // Generate slug from company name
-        let slug = company_name
+        // Generate unique slug from company name
+        let baseSlug = company_name
           .toLowerCase()
           .replace(/[^a-z0-9\s-]/g, '')
           .replace(/\s+/g, '-')
           .replace(/-+/g, '-')
           .substring(0, 50);
         
-        if (!slug) {
-          slug = 'client-' + Date.now();
+        if (!baseSlug) {
+          baseSlug = 'client-' + Date.now();
+        }
+        
+        // Ensure slug is unique by appending numbers if necessary
+        let slug = baseSlug;
+        let counter = 1;
+        
+        while (await models.Client.findOne({ where: { slug } })) {
+          slug = `${baseSlug}-${counter}`;
+          counter++;
         }
         
         const client = await models.Client.create({
