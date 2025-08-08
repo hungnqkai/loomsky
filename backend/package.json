@@ -14,7 +14,12 @@
     "db:seed": "sequelize-cli db:seed:all",
     "db:seed:undo": "sequelize-cli db:seed:undo:all",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "watch-docs": "node watch-api-smart.js",
+    "dev-with-docs": "concurrently \"npm run dev\" \"npm run watch-docs\"",
+    "docs:manual-update": "claude-code 'Full scan và update Postman collection từ LoomSky backend API'",
+    "docs:backup": "claude-code 'Backup current LoomSky Postman collection'",
+    "docs:validate": "claude-code 'Validate LoomSky Postman collection structure'"
   },
   "dependencies": {
     "@paypal/checkout-server-sdk": "^1.0.3",
@@ -23,7 +28,6 @@
     "compression": "^1.7.4",
     "connect-redis": "^7.1.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
     "express-session": "^1.17.3",
@@ -47,6 +51,10 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",
+    "axios": "^1.11.0",
+    "chokidar": "^4.0.3",
+    "concurrently": "^9.2.0",
+    "dotenv": "^17.2.1",
     "eslint": "^8.56.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.29.1",
