@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar app flat color="background">
+  <v-app-bar app flat color="background" class="fixed-header">
     <v-app-bar-nav-icon @click="$emit('toggle-sidebar')"></v-app-bar-nav-icon>
     <v-btn icon="mdi-magnify" class="mr-2"></v-btn>
     <v-spacer></v-spacer>
@@ -120,5 +120,11 @@ const onLogout = () => {
     border-radius: 8px;
     margin-right: 16px;
   }
+}
+
+// Fix header positioning
+.fixed-header {
+  position: fixed !important;
+  z-index: 1005 !important;
 }
 </style>

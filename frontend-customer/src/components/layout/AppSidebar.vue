@@ -1,7 +1,7 @@
 <template>
   <v-navigation-drawer
     app
-    class="loomsky-sidebar"
+    class="loomsky-sidebar fixed-sidebar"
     :rail="rail"
     :expand-on-hover="rail"
     permanent
@@ -59,3 +59,18 @@ defineProps({
   }
 });
 </script>
+
+<style scoped lang="scss">
+// Fix sidebar positioning
+.fixed-sidebar {
+  position: fixed !important;
+  z-index: 1004 !important;
+  height: 100vh !important;
+}
+
+// Ensure sidebar content is scrollable if needed
+:deep(.v-navigation-drawer__content) {
+  height: 100%;
+  overflow-y: auto;
+}
+</style>
