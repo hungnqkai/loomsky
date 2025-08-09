@@ -179,7 +179,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useWebsiteStore } from '@/stores/websiteStore';
 import TriggersList from '@/components/tracking/TriggersList.vue';
 
@@ -303,11 +303,23 @@ const openTriggerSetup = async (pixelId) => {
   }
 };
 
-const handleTriggerSetupMessage = (event) => {
-  if (event.data?.type === 'LOOMSKY_TRIGGER_SETUP_COMPLETE') {
-    // Refresh triggers list
-    loadTriggers();
+const handleTriggerSetupMessage = async (event) => {
+  const { type, data } = event.data || {};
+  
+  if (type === 'LOOMSKY_TRIGGER_SETUP_COMPLETE') {
+    console.log('[LOOMSKY APP]: Trigger saved, refreshing triggers list...');
     
+    // Refresh triggers list
+    await loadTriggers();
+    
+    // Show success message
+    websiteStore.successMessage = 'Event trigger saved successfully!';
+    
+    // Clean up event listener
+    window.removeEventListener('message', handleTriggerSetupMessage);
+  }
+  
+  if (type === 'LOOMSKY_TRIGGER_SETUP_CANCELLED') {
     // Clean up event listener
     window.removeEventListener('message', handleTriggerSetupMessage);
   }
@@ -315,12 +327,21 @@ const handleTriggerSetupMessage = (event) => {
 
 // Lifecycle
 onMounted(async () => {
+  console.log('[LOOMSKY APP]: EventTriggersManager mounted.');
   await loadPixels();
   if (pixels.value.length > 0) {
     await loadTriggers();
     // Expand first panel by default
     expandedPanels.value = [pixels.value[0]?.id];
   }
+  
+  // Always listen for trigger setup messages
+  window.addEventListener('message', handleTriggerSetupMessage);
+});
+
+onUnmounted(() => {
+  console.log('[LOOMSKY APP]: EventTriggersManager unmounting.');
+  window.removeEventListener('message', handleTriggerSetupMessage);
 });
 </script>
 

@@ -157,7 +157,7 @@ const getTriggersForWebsitePixel = async (req, res) => {
 const getTriggersForPixel = async (req, res) => {
   try {
     const { pixelId } = req.params;
-    const { enabled = true } = req.query;
+    const { enabled = 'true' } = req.query;
 
     // Verify pixel exists and user has access
     const pixel = await Pixel.findByPk(pixelId);
@@ -172,7 +172,8 @@ const getTriggersForPixel = async (req, res) => {
       pixel_id: pixelId
     };
     
-    if (enabled !== undefined) {
+    // Only add enabled filter if not 'all'
+    if (enabled !== 'all') {
       whereConditions.enabled = enabled === 'true';
     }
 

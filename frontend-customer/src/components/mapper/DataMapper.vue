@@ -498,16 +498,35 @@ const clearManualHighlight = () => {
   }
 };
 
-const findInteractiveElements = () => {
-  const selectors = [ 'button', 'a[href]', 'input:not([type="hidden"])', '[role="button"]', '[onclick]', '[data-cy]', '[data-testid]', '.btn', '.button', '.price', '[class*="price"]' ];
+const findDataElements = () => {
+  // Data Mapper focuses on text/content elements (not interactive buttons)
+  const selectors = [ 
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+    'p', 'span:not(.loomsky-*)', 'div:not(.loomsky-*)', 
+    '.price:not(button):not(a)', '[class*="price"]:not(button):not(a)', 
+    '.title:not(button):not(a)', '[class*="title"]:not(button):not(a)',
+    '.name:not(button):not(a)', '[class*="name"]:not(button):not(a)',
+    '.description:not(button):not(a)', '[class*="description"]:not(button):not(a)',
+    'img[alt]', '[class*="image"]:not(button):not(a)',
+    '.category:not(button):not(a)', '[class*="category"]:not(button):not(a)'
+  ];
   try {
     document.querySelectorAll(selectors.join(', ')).forEach(el => {
-      if (!el.closest('#loomsky-mapper-host')) {
+      // Only add elements that contain text or are images
+      const hasText = el.textContent?.trim().length > 0;
+      const isImage = el.tagName.toLowerCase() === 'img';
+      
+      if ((hasText || isImage) && 
+          !el.closest('#loomsky-mapper-host') && 
+          !el.classList.contains('loomsky-interactive-suggestion')) {
         el.classList.add('loomsky-interactive-suggestion');
         suggestionElements.value.push(el);
       }
     });
-  } catch {}
+    console.log(`[LOOMSKY MAPPER]: Found ${suggestionElements.value.length} data elements`);
+  } catch (error) {
+    console.warn('Error finding data elements:', error);
+  }
 };
 
 // --- LIFECYCLE HOOKS ---
@@ -529,7 +548,7 @@ onMounted(async () => {
   await fetchAndHighlight();
   document.addEventListener('mouseover', handleMouseOver);
   document.addEventListener('click', handleClick, true);
-  setTimeout(findInteractiveElements, 100);
+  setTimeout(findDataElements, 100);
 });
 
 onUnmounted(() => {
