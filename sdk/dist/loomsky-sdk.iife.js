@@ -1150,7 +1150,11 @@ var LoomSkySDK = function() {
       }
       console.log("LoomSky SDK: Token accepted. Injecting Mapper Agent...");
       try {
-        await this._mountApp({ websiteId: verification.websiteId });
+        await this._mountApp({
+          websiteId: verification.websiteId,
+          api: this.api
+          // ✅ TRUYỀN API OBJECT VÀO PROPS
+        });
         console.log("LoomSky SDK: Mapper Agent injected and mounted successfully.");
         return true;
       } catch (error) {
