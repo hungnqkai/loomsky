@@ -47,7 +47,7 @@ class ApiService {
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
             const result = await response.json();
-            return result.data;
+            return result; // Return full response object with success flag
         } catch (error) {
             console.error('LoomSky SDK: Failed to verify setup token.', error);
             return null;
@@ -84,6 +84,37 @@ class ApiService {
             }
         } catch (error) {
             console.error('LoomSky SDK: Error sending event to backend.', error);
+        }
+    }
+
+    /**
+     * (NEW) Generic track method for different event types
+     * @param {string} eventType - Type of event ('event', 'trigger_fired', etc.)
+     * @param {object} eventData - Event data payload
+     * @returns {Promise<void>}
+     */
+    async track(eventType, eventData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/track/event`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    apiKey: this.apiKey,
+                    event_type: eventType,
+                    ...eventData,
+                }),
+            });
+
+            if (response.status !== 202) { // 202 Accepted
+                 const errorData = await response.json();
+                 console.error(`LoomSky SDK: Failed to track ${eventType}.`, errorData.error);
+            } else {
+                 console.log(`LoomSky SDK: [TRACK] ${eventType} successfully sent to backend.`);
+            }
+        } catch (error) {
+            console.error(`LoomSky SDK: Error sending ${eventType} to backend.`, error);
         }
     }
 }

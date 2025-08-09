@@ -1047,6 +1047,221 @@ var LoomSkySDK = function() {
       };
     }
   }
+  const TRIGGER_ASSETS_BASE_URL = "http://localhost:5173/dist";
+  class EventTriggerManager {
+    constructor(api) {
+      this.api = api;
+      this.triggers = {
+        url_triggers: [],
+        click_triggers: []
+      };
+      this.isSetupMode = false;
+      this.setupToken = null;
+      this.boundHandlers = /* @__PURE__ */ new Map();
+      console.log("LoomSky SDK: EventTriggerManager initialized");
+    }
+    // Initialize triggers from config
+    initialize(config, identity) {
+      console.log("LoomSky SDK: EventTriggerManager initializing triggers...");
+      if (config && config.pixels) {
+        config.pixels.forEach((pixel) => {
+          if (pixel.event_triggers) {
+            this.triggers.url_triggers.push(...pixel.event_triggers.url_triggers || []);
+            this.triggers.click_triggers.push(...pixel.event_triggers.click_triggers || []);
+          }
+        });
+      }
+      console.log("LoomSky SDK: Loaded triggers:", {
+        url_triggers: this.triggers.url_triggers.length,
+        click_triggers: this.triggers.click_triggers.length
+      });
+      this.startTriggerExecution(identity);
+    }
+    // Start trigger execution (normal mode)
+    startTriggerExecution(identity) {
+      this.setupUrlTriggers(identity);
+      this.setupClickTriggers(identity);
+      console.log("LoomSky SDK: EventTriggerManager execution started");
+    }
+    // Setup URL-based triggers
+    setupUrlTriggers(identity) {
+      if (this.triggers.url_triggers.length === 0) return;
+      const currentUrl = window.location.href;
+      const currentPath = window.location.pathname;
+      this.triggers.url_triggers.forEach((trigger) => {
+        if (!trigger.enabled) return;
+        let shouldFire = false;
+        switch (trigger.url_match_type) {
+          case "contains":
+            shouldFire = currentUrl.includes(trigger.url_pattern);
+            break;
+          case "equals":
+            shouldFire = currentPath === trigger.url_pattern;
+            break;
+          case "starts_with":
+            shouldFire = currentPath.startsWith(trigger.url_pattern);
+            break;
+          case "ends_with":
+            shouldFire = currentPath.endsWith(trigger.url_pattern);
+            break;
+          case "regex":
+            try {
+              const regex = new RegExp(trigger.url_pattern);
+              shouldFire = regex.test(currentUrl);
+            } catch (e) {
+              console.error("LoomSky SDK: Invalid regex pattern:", trigger.url_pattern, e);
+            }
+            break;
+        }
+        if (shouldFire) {
+          this.fireTrigger(trigger, identity);
+        }
+      });
+    }
+    // Setup click-based triggers
+    setupClickTriggers(identity) {
+      if (this.triggers.click_triggers.length === 0) return;
+      this.triggers.click_triggers.forEach((trigger) => {
+        if (!trigger.enabled) return;
+        try {
+          const elements = document.querySelectorAll(trigger.selector);
+          elements.forEach((element) => {
+            const handlerKey = `${trigger.id}_${Math.random()}`;
+            const clickHandler = (event) => {
+              var _a;
+              if (trigger.element_text && trigger.element_text.trim()) {
+                const elementText = (_a = element.textContent) == null ? void 0 : _a.trim();
+                if (elementText !== trigger.element_text.trim()) {
+                  return;
+                }
+              }
+              this.fireTrigger(trigger, identity, {
+                element,
+                selector: trigger.selector
+              });
+            };
+            this.boundHandlers.set(handlerKey, {
+              element,
+              handler: clickHandler,
+              trigger
+            });
+            element.addEventListener("click", clickHandler);
+          });
+          console.log(`LoomSky SDK: Setup click trigger for selector: ${trigger.selector} (${elements.length} elements)`);
+        } catch (e) {
+          console.error("LoomSky SDK: Invalid CSS selector:", trigger.selector, e);
+        }
+      });
+    }
+    // Fire trigger event
+    async fireTrigger(trigger, identity, context = {}) {
+      console.log("LoomSky SDK: Firing trigger:", trigger.event_name, trigger);
+      try {
+        const eventData = {
+          event_name: trigger.event_name,
+          trigger_id: trigger.id,
+          trigger_type: trigger.trigger_type,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          url: window.location.href,
+          user_id: identity.getUserId(),
+          session_id: identity.getSessionId(),
+          ...context
+        };
+        await this.api.track("trigger_fired", eventData);
+        console.log("LoomSky SDK: Trigger fired successfully:", trigger.event_name);
+      } catch (error) {
+        console.error("LoomSky SDK: Error firing trigger:", error);
+      }
+    }
+    // Activate trigger setup mode (like mapper setup)
+    async activateSetupMode(setupState) {
+      console.log("LoomSky SDK: Activating Trigger Setup Mode...");
+      this.isSetupMode = true;
+      this.setupToken = setupState.token;
+      try {
+        const response = await this.api.verifySetupToken(setupState.token);
+        if (!response || !response.success) {
+          console.error("LoomSky SDK: Invalid setup token");
+          return false;
+        }
+        await this.loadTriggerSetupTool(response.data);
+        return true;
+      } catch (error) {
+        console.error("LoomSky SDK: Error activating trigger setup:", error);
+        return false;
+      }
+    }
+    // Load trigger setup tool (similar to mapper loading)
+    async loadTriggerSetupTool(sessionData) {
+      console.log("LoomSky SDK: Loading trigger setup tool...");
+      try {
+        const hostElement = document.createElement("div");
+        hostElement.id = "loomsky-trigger-host";
+        hostElement.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 999999 !important;
+                pointer-events: none !important;
+            `;
+        const shadowRoot = hostElement.attachShadow({ mode: "open" });
+        const appMountPoint = document.createElement("div");
+        document.body.appendChild(hostElement);
+        await new Promise((resolve, reject) => {
+          const cssLink = document.createElement("link");
+          cssLink.rel = "stylesheet";
+          cssLink.href = `${TRIGGER_ASSETS_BASE_URL}/triggers.css`;
+          cssLink.onload = resolve;
+          cssLink.onerror = reject;
+          shadowRoot.appendChild(cssLink);
+        });
+        console.log("LoomSky SDK: Trigger CSS loaded successfully.");
+        await this._injectTriggerScript();
+        console.log("LoomSky SDK: Trigger JS loaded successfully.");
+        if (typeof window.mountTriggerSetupApp !== "function") {
+          throw new Error("LoomSky SDK: Trigger mount function not found.");
+        }
+        shadowRoot.appendChild(appMountPoint);
+        window.mountTriggerSetupApp(appMountPoint, {
+          websiteId: sessionData.websiteId,
+          pixelId: sessionData.pixelId,
+          token: this.setupToken
+        });
+        console.log("LoomSky SDK: Trigger setup tool mounted successfully");
+      } catch (error) {
+        console.error("LoomSky SDK: Error loading trigger setup tool:", error);
+        throw error;
+      }
+    }
+    /**
+     * Load trigger setup JavaScript from CDN
+     * @private
+     */
+    _injectTriggerScript() {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = `${TRIGGER_ASSETS_BASE_URL}/triggers.js`;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+    // Cleanup method
+    destroy() {
+      console.log("LoomSky SDK: EventTriggerManager cleaning up...");
+      this.boundHandlers.forEach((handlerData, key) => {
+        handlerData.element.removeEventListener("click", handlerData.handler);
+      });
+      this.boundHandlers.clear();
+      const hostElement = document.getElementById("loomsky-trigger-host");
+      if (hostElement) {
+        hostElement.remove();
+      }
+    }
+  }
   const API_BASE_URL = "http://localhost:3000/api/v1";
   class ApiService {
     constructor(apiKey) {
@@ -1088,7 +1303,7 @@ var LoomSkySDK = function() {
           throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-        return result.data;
+        return result;
       } catch (error) {
         console.error("LoomSky SDK: Failed to verify setup token.", error);
         return null;
@@ -1122,6 +1337,35 @@ var LoomSkySDK = function() {
         }
       } catch (error) {
         console.error("LoomSky SDK: Error sending event to backend.", error);
+      }
+    }
+    /**
+     * (NEW) Generic track method for different event types
+     * @param {string} eventType - Type of event ('event', 'trigger_fired', etc.)
+     * @param {object} eventData - Event data payload
+     * @returns {Promise<void>}
+     */
+    async track(eventType, eventData) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/track/event`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            apiKey: this.apiKey,
+            event_type: eventType,
+            ...eventData
+          })
+        });
+        if (response.status !== 202) {
+          const errorData = await response.json();
+          console.error(`LoomSky SDK: Failed to track ${eventType}.`, errorData.error);
+        } else {
+          console.log(`LoomSky SDK: [TRACK] ${eventType} successfully sent to backend.`);
+        }
+      } catch (error) {
+        console.error(`LoomSky SDK: Error sending ${eventType} to backend.`, error);
       }
     }
   }
@@ -1212,6 +1456,7 @@ var LoomSkySDK = function() {
       this.apiKey = this.getApiKey();
       this.eventListener = null;
       this.identity = null;
+      this.eventTriggerManager = null;
       this.config = null;
       if (this.apiKey) {
         this.api = new ApiService(this.apiKey);
@@ -1231,11 +1476,17 @@ var LoomSkySDK = function() {
       } catch (e) {
       }
       const urlParams = new URLSearchParams(window.location.search);
-      const isUrlMode = urlParams.get("ls_setup_mode") === "true";
+      const isMapperMode = urlParams.get("ls_setup_mode") === "true";
+      const isTriggerMode = urlParams.get("ls_trigger_setup_mode") === "true";
       const urlToken = urlParams.get("ls_token");
-      if (isUrlMode && urlToken) {
+      if ((isMapperMode || isTriggerMode) && urlToken) {
         console.log("LoomSky SDK: Found setup params in URL.");
-        return { isSetupMode: true, token: urlToken, fromSession: false };
+        return {
+          isSetupMode: true,
+          setupType: isMapperMode ? "mapper" : "triggers",
+          token: urlToken,
+          fromSession: false
+        };
       }
       return { isSetupMode: false, token: null };
     }
@@ -1246,9 +1497,16 @@ var LoomSkySDK = function() {
       }
       const setupState = this.getSetupState();
       if (setupState.isSetupMode) {
-        console.log("LoomSky SDK: Activating Mapper Mode...");
-        const mapperLoader = new MapperLoader(this.api);
-        const isActivated = await mapperLoader.activate(setupState);
+        let isActivated = false;
+        if (setupState.setupType === "triggers") {
+          console.log("LoomSky SDK: Activating Trigger Setup Mode...");
+          this.eventTriggerManager = new EventTriggerManager(this.api);
+          isActivated = await this.eventTriggerManager.activateSetupMode(setupState);
+        } else {
+          console.log("LoomSky SDK: Activating Mapper Mode...");
+          const mapperLoader = new MapperLoader(this.api);
+          isActivated = await mapperLoader.activate(setupState);
+        }
         if (isActivated && !setupState.fromSession) {
           const sessionData = { isActive: true, token: setupState.token };
           sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
@@ -1274,6 +1532,8 @@ var LoomSkySDK = function() {
           this.identity = new Identity();
           this.eventListener = new EventListener(this.api);
           this.eventListener.start(this.config, this.identity);
+          this.eventTriggerManager = new EventTriggerManager(this.api);
+          this.eventTriggerManager.initialize(this.config, this.identity);
           this.exposeDebugMethods();
           console.log("LoomSky SDK: Started successfully.");
         } else {

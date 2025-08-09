@@ -17,7 +17,7 @@ const sdkController = {
      * @access  Private (Yêu cầu đăng nhập)
      */
     initSetupSession: asyncHandler(async (req, res) => {
-        const { websiteId } = req.body;
+        const { websiteId, pixelId, setupType } = req.body;
         const clientId = req.user.client_id;
 
         // Kiểm tra website có thuộc sở hữu của client không
@@ -26,11 +26,26 @@ const sdkController = {
             throw new AppError('Website not found or you do not have permission.', 404);
         }
 
+        // Nếu có pixelId, kiểm tra pixel có thuộc website không
+        if (pixelId) {
+            const pixel = await models.Pixel.findOne({ 
+                where: { 
+                    id: pixelId,
+                    website_id: websiteId 
+                } 
+            });
+            if (!pixel) {
+                throw new AppError('Pixel not found or does not belong to this website.', 404);
+            }
+        }
+
         // Tạo token duy nhất, dùng một lần
         const token = uuidv4();
         const redisKey = `setup_token:${token}`;
         const tokenData = {
             websiteId: website.id,
+            pixelId: pixelId || null,
+            setupType: setupType || 'mapper', // 'mapper' or 'triggers'
             clientId: clientId,
             userId: req.user.id,
         };
@@ -72,6 +87,8 @@ const sdkController = {
             message: 'Token verified successfully.',
             data: {
                 websiteId: tokenData.websiteId,
+                pixelId: tokenData.pixelId,
+                setupType: tokenData.setupType,
             },
         });
     }),

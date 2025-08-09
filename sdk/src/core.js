@@ -5,6 +5,7 @@ SOLUTION: Expose debug methods ra global window object
 
 import Identity from './modules/identity';
 import EventListener from './modules/eventListener';
+import EventTriggerManager from './modules/eventTriggerManager';
 import ApiService from './utils/api';
 import MapperLoader from './modules/mapperLoader';
 
@@ -18,6 +19,7 @@ class Core {
         // Store references to main components
         this.eventListener = null;
         this.identity = null;
+        this.eventTriggerManager = null;
         this.config = null;
         
         if (this.apiKey) {
@@ -39,12 +41,18 @@ class Core {
         } catch (e) { /* ... */ }
         
         const urlParams = new URLSearchParams(window.location.search);
-        const isUrlMode = urlParams.get('ls_setup_mode') === 'true';
+        const isMapperMode = urlParams.get('ls_setup_mode') === 'true';
+        const isTriggerMode = urlParams.get('ls_trigger_setup_mode') === 'true';
         const urlToken = urlParams.get('ls_token');
 
-        if (isUrlMode && urlToken) {
+        if ((isMapperMode || isTriggerMode) && urlToken) {
             console.log('LoomSky SDK: Found setup params in URL.');
-            return { isSetupMode: true, token: urlToken, fromSession: false };
+            return { 
+                isSetupMode: true, 
+                setupType: isMapperMode ? 'mapper' : 'triggers',
+                token: urlToken, 
+                fromSession: false 
+            };
         }
 
         return { isSetupMode: false, token: null };
@@ -59,10 +67,17 @@ class Core {
         const setupState = this.getSetupState();
 
         if (setupState.isSetupMode) {
-            console.log('LoomSky SDK: Activating Mapper Mode...');
-            const mapperLoader = new MapperLoader(this.api);
+            let isActivated = false;
             
-            const isActivated = await mapperLoader.activate(setupState);
+            if (setupState.setupType === 'triggers') {
+                console.log('LoomSky SDK: Activating Trigger Setup Mode...');
+                this.eventTriggerManager = new EventTriggerManager(this.api);
+                isActivated = await this.eventTriggerManager.activateSetupMode(setupState);
+            } else {
+                console.log('LoomSky SDK: Activating Mapper Mode...');
+                const mapperLoader = new MapperLoader(this.api);
+                isActivated = await mapperLoader.activate(setupState);
+            }
             
             if (isActivated && !setupState.fromSession) {
                 const sessionData = { isActive: true, token: setupState.token };
@@ -93,6 +108,10 @@ class Core {
                 this.identity = new Identity();
                 this.eventListener = new EventListener(this.api);
                 this.eventListener.start(this.config, this.identity);
+                
+                // ✅ Initialize Event Trigger Manager for normal tracking
+                this.eventTriggerManager = new EventTriggerManager(this.api);
+                this.eventTriggerManager.initialize(this.config, this.identity);
                 
                 // ✅ EXPOSE DEBUG METHODS TO GLOBAL SCOPE
                 this.exposeDebugMethods();
