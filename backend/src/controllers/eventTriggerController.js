@@ -457,11 +457,97 @@ const bulkToggleTriggers = async (req, res) => {
   }
 };
 
+// POST /api/v1/sdk/websites/:websiteId/pixels/:pixelId/triggers (from setup tool)
+const createTriggerFromSetupTool = async (req, res) => {
+  try {
+    const { websiteId, pixelId } = req.params;
+    const triggerData = req.body;
+    
+    console.log('CreateTriggerFromSetupTool - Params:', { websiteId, pixelId });
+    console.log('CreateTriggerFromSetupTool - Body:', triggerData);
+    
+    // Extract setupToken from triggerData before validation
+    const { setupToken, ...cleanTriggerData } = triggerData;
+    
+    if (!setupToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'Setup token is required for trigger creation'
+      });
+    }
+    
+    // Get user info from Redis setup session
+    const { redisUtils } = require('../config/redis');
+    const redisKey = `setup_token:${setupToken}`;
+    const tokenData = await redisUtils.get(redisKey);
+    
+    if (!tokenData) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired setup token'
+      });
+    }
+    
+    // Validate input using same schema as regular createTrigger (without setupToken)
+    const { error, value } = createTriggerSchema.validate(cleanTriggerData);
+    if (error) {
+      console.log('Validation error:', error.details);
+      return res.status(400).json({
+        success: false,
+        error: error.details.map(d => d.message).join(', ')
+      });
+    }
+    
+    console.log('Validation passed, validated value:', value);
+
+    // Create trigger with user ID from setup session
+    const trigger = await EventTrigger.create({
+      ...value,
+      website_id: websiteId,
+      pixel_id: pixelId,
+      created_by: tokenData.userId
+    });
+
+    // Optional: Delete token after successful trigger creation to prevent reuse
+    // await redisUtils.del(redisKey);
+
+    res.status(201).json({
+      success: true,
+      message: 'Trigger created successfully from setup tool',
+      data: trigger
+    });
+
+  } catch (error) {
+    console.error('Error creating trigger from setup tool:', error);
+    
+    // Handle duplicate trigger error
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({
+        success: false,
+        error: 'A trigger with the same configuration already exists'
+      });
+    }
+    
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        success: false,
+        error: error.errors.map(e => e.message).join(', ')
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create trigger'
+    });
+  }
+};
+
 module.exports = {
   getTriggersForWebsitePixel,
   getTriggersForPixel,
   createTrigger,
   updateTrigger,
   deleteTrigger,
-  bulkToggleTriggers
+  bulkToggleTriggers,
+  createTriggerFromSetupTool
 };

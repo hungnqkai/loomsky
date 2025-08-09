@@ -113,13 +113,20 @@
             
             <div class="form-group">
               <label class="form-label">Facebook Event Type</label>
-              <v-select
-                v-model="eventName"
-                :items="facebookEvents"
-                variant="outlined"
-                density="compact"
-                hide-details
-              />
+              <select 
+                v-model="eventName" 
+                class="native-select"
+                style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"
+              >
+                <option value="" disabled>Select event type</option>
+                <option 
+                  v-for="event in facebookEvents" 
+                  :key="event.value" 
+                  :value="event.value"
+                >
+                  {{ event.title }}
+                </option>
+              </select>
             </div>
           </div>
           
@@ -200,13 +207,20 @@
             
             <div class="form-group">
               <label class="form-label">Facebook Event Type</label>
-              <v-select
-                v-model="eventName"
-                :items="facebookEvents"
-                variant="outlined"
-                density="compact"
-                hide-details
-              />
+              <select 
+                v-model="eventName" 
+                class="native-select"
+                style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"
+              >
+                <option value="" disabled>Select event type</option>
+                <option 
+                  v-for="event in facebookEvents" 
+                  :key="event.value" 
+                  :value="event.value"
+                >
+                  {{ event.title }}
+                </option>
+              </select>
             </div>
             
             <div class="selection-controls">
@@ -284,7 +298,7 @@ const highlightedElement = ref(null);
 // Form data
 const urlPattern = ref('');
 const urlMatchType = ref('contains');
-const eventName = ref('ViewContent');
+const eventName = ref('');
 
 // Dragging
 const isDragging = ref(false);
@@ -307,10 +321,29 @@ const urlMatchTypes = [
 ];
 
 const facebookEvents = computed(() => {
-  return getFacebookCompatibleEvents().map(event => ({
-    title: event.title,
-    value: event.name
-  }));
+  try {
+    const events = getFacebookCompatibleEvents();
+    console.log('Facebook events loaded:', events);
+    return events.map(event => ({
+      title: event.title,
+      value: event.name
+    }));
+  } catch (error) {
+    console.error('Error loading Facebook events:', error);
+    // Fallback to hardcoded events if import fails
+    return [
+      { title: 'Page View', value: 'PageView' },
+      { title: 'View Content', value: 'ViewContent' },
+      { title: 'Add to Cart', value: 'AddToCart' },
+      { title: 'Add to Wishlist', value: 'AddToWishlist' },
+      { title: 'Initiate Checkout', value: 'InitiateCheckout' },
+      { title: 'Purchase', value: 'Purchase' },
+      { title: 'Lead', value: 'Lead' },
+      { title: 'Complete Registration', value: 'CompleteRegistration' },
+      { title: 'Search', value: 'Search' },
+      { title: 'Contact', value: 'Contact' }
+    ];
+  }
 });
 
 const isValidUrlTrigger = computed(() => {
@@ -457,10 +490,23 @@ const saveTrigger = async () => {
   saving.value = true;
   
   try {
+    console.log('Save trigger props:', { 
+      websiteId: props.websiteId, 
+      pixelId: props.pixelId, 
+      token: props.token?.substring(0, 10) + '...' 
+    });
+    
+    // TEMPORARY: Skip save if pixelId is null
+    if (!props.pixelId) {
+      alert('Error: pixelId is null. Please check backend token data.');
+      return;
+    }
+    
     const triggerData = {
       event_name: eventName.value,
       trigger_type: selectedTriggerType.value,
-      enabled: true
+      enabled: true,
+      setupToken: props.token  // Send setup token for user identification
     };
     
     if (selectedTriggerType.value === 'url_match') {
@@ -471,12 +517,12 @@ const saveTrigger = async () => {
       triggerData.element_text = selectedElement.value.text;
     }
     
-    // Send trigger data to backend via API
-    const response = await fetch(`/api/v1/websites/${props.websiteId}/pixels/${props.pixelId}/triggers`, {
+    // Send trigger data to backend via SDK public endpoint (no auth required)
+    const API_BASE_URL = 'http://localhost:3000/api/v1';
+    const response = await fetch(`${API_BASE_URL}/sdk/websites/${props.websiteId}/pixels/${props.pixelId}/triggers`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${props.token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(triggerData)
     });

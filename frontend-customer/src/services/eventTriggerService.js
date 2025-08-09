@@ -86,11 +86,17 @@ const eventTriggerService = {
    * @returns {Promise} API response with setup token
    */
   async initTriggerSetupSession(websiteId, pixelId) {
+    console.log('EventTriggerService: Sending init-setup request:', { 
+      websiteId, 
+      pixelId, 
+      setupType: 'triggers' 
+    });
     const response = await api.post('/sdk/init-setup', { 
       websiteId,
       pixelId,
       setupType: 'triggers'  // Distinguish from data mapping setup
     });
+    console.log('EventTriggerService: Init-setup response:', response.data);
     return response.data;
   },
 

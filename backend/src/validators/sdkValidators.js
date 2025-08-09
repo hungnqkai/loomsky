@@ -16,6 +16,8 @@ const verifyApiKeySchema = {
 const initSetupSchema = {
     body: Joi.object({
         websiteId: Joi.string().uuid().required(),
+        pixelId: Joi.string().uuid().optional(),
+        setupType: Joi.string().valid('mapper', 'triggers').optional().default('mapper'),
     }),
 };
 

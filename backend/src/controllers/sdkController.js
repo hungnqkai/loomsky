@@ -17,7 +17,9 @@ const sdkController = {
      * @access  Private (Yêu cầu đăng nhập)
      */
     initSetupSession: asyncHandler(async (req, res) => {
+        console.log('Raw request body received:', req.body);
         const { websiteId, pixelId, setupType } = req.body;
+        console.log('Destructured values:', { websiteId, pixelId, setupType });
         const clientId = req.user.client_id;
 
         // Kiểm tra website có thuộc sở hữu của client không
@@ -49,6 +51,8 @@ const sdkController = {
             clientId: clientId,
             userId: req.user.id,
         };
+        
+        console.log('Creating setup token with data:', tokenData);
         const fiveMinutesInSeconds = 5 * 60;
 
         // Lưu token vào Redis với thời gian hết hạn là 5 phút
@@ -74,13 +78,15 @@ const sdkController = {
 
         // Lấy dữ liệu từ Redis
         const tokenData = await redisUtils.get(redisKey);
+        console.log('Verifying setup token, retrieved data:', tokenData);
 
         if (!tokenData) {
             throw new AppError('Invalid or expired setup token.', 401);
         }
 
-        // Xóa token ngay sau khi sử dụng để đảm bảo nó chỉ được dùng một lần
-        await redisUtils.del(redisKey);
+        // DON'T delete token immediately - keep it for trigger creation
+        // We'll let it expire naturally after 5 minutes
+        // await redisUtils.del(redisKey);
 
         res.status(200).json({
             success: true,

@@ -33,4 +33,8 @@ router.get('/config', sdkController.getConfig);
 // Endpoint này được SDK gọi để lấy triggers cho pixel cụ thể
 router.get('/pixels/:pixelId/triggers', eventTriggerController.getTriggersForPixel);
 
+// --- Routes cho Event Triggers Setup Tool ---
+// Endpoint này được gọi từ trigger setup tool (sử dụng setup token)
+router.post('/websites/:websiteId/pixels/:pixelId/triggers', eventTriggerController.createTriggerFromSetupTool);
+
 module.exports = router;

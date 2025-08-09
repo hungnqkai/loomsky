@@ -253,11 +253,16 @@ const openTriggerSetup = async (pixelId) => {
   showPixelSelector.value = false;
   
   try {
+    console.log('Opening trigger setup for pixelId:', pixelId);
+    console.log('Available pixels:', pixels.value.map(p => ({ id: p.id, pixel_id: p.pixel_id })));
+    
     // Get pixel info
     const pixel = pixels.value.find(p => p.id === pixelId);
     if (!pixel) {
       throw new Error('Pixel not found');
     }
+    
+    console.log('Found pixel:', pixel);
 
     // Get website info
     const website = websiteStore.currentWebsite;
