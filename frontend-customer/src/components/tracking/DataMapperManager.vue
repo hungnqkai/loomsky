@@ -306,13 +306,13 @@ const getPageContextTitle = (pageContext) => {
 };
 
 const highlightElementBySelector = (selector) => {
-  // This would be implemented to highlight elements on the website
-  console.log('Highlighting selector:', selector);
+  // Dashboard không thể highlight elements trên website khác domain
+  // Chỉ log để debug
+  console.log('Would highlight selector:', selector);
 };
 
 const clearManualHighlight = () => {
-  // Clear any highlighting
-  console.log('Clearing highlight');
+  // Không cần làm gì trên dashboard
 };
 
 const editMapping = (mapping) => {
