@@ -42,7 +42,6 @@
           <div v-if="existingTriggers.length > 0" class="existing-events-section">
             <div class="existing-events-header">
               <h4 class="existing-events-title">
-                <v-icon size="18" color="success" class="mr-1">mdi-check-circle</v-icon>
                 Events Already Setup ({{ existingTriggers.length }})
               </h4>
             </div>
@@ -184,7 +183,6 @@
           
           <div class="step-actions">
             <v-btn 
-              variant="outlined"
               @click="previousStep"
               class="back-btn"
             >
@@ -209,12 +207,9 @@
             <div class="step-dot active"></div>
             <span class="step-text">Step 2 of 2</span>
           </div>
-
-          <h3 class="step-title">Select element to track</h3>
           
           <div v-if="!selectedElement" class="selection-mode">
             <div class="selection-info">
-              <v-icon size="48" color="primary" class="mb-4">mdi-cursor-default-click-outline</v-icon>
               <h4>Click on any element to track it</h4>
               <p>Move your mouse around the page and click on buttons, links, or other elements you want to track.</p>
             </div>
@@ -222,7 +217,6 @@
             <div class="selection-controls">
               <v-btn 
                 :color="selectionMode ? 'error' : 'primary'"
-                :variant="selectionMode ? 'tonal' : 'elevated'"
                 @click="toggleSelectionMode"
                 class="selection-btn"
               >
@@ -234,7 +228,6 @@
 
           <div v-else class="element-selected">
             <div class="selected-element-info">
-              <v-icon size="24" color="success" class="mr-2">mdi-check-circle</v-icon>
               <h4>Element Selected!</h4>
             </div>
             
@@ -373,7 +366,7 @@ const eventName = ref('');
 // Dragging
 const isDragging = ref(false);
 const dragStart = ref({ x: 0, y: 0 });
-const popupPosition = ref({ x: 100, y: 100 });
+const popupPosition = ref({ x: 20, y: 50 });
 
 // Refs
 const popupRef = ref(null);
@@ -408,36 +401,10 @@ const suggestionStyles = `
     box-shadow: 0 0 15px rgba(59, 130, 246, 0.6) !important;
     transform: scale(1.02) !important;
   }
-  .loomsky-trigger-suggestion::before {
-    content: '⚡ Click Event';
-    position: absolute;
-    top: -10px;
-    left: 8px;
-    background: #3b82f6;
-    color: white;
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 500;
-    z-index: 10000;
-  }
   .loomsky-already-triggered { 
     border: 3px solid #8B5CF6 !important; 
     background: rgba(139, 92, 246, 0.1) !important;
     position: relative;
-  }
-  .loomsky-already-triggered::after {
-    content: '✓ Event Setup';
-    position: absolute;
-    top: -8px;
-    left: 8px;
-    background: #8B5CF6;
-    color: white;
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 500;
-    z-index: 10000;
   }
 `;
 
@@ -734,7 +701,7 @@ const saveTrigger = async () => {
           loadExistingTriggers().then(() => {
             highlightExistingTriggers();
           });
-        }, 1500);
+        }, 700);
         
         // Success - notify parent window
         window.parent.postMessage({
@@ -972,12 +939,10 @@ onUnmounted(() => {
 
 .trigger-popup {
   position: fixed;
-  top: 100px;
-  left: 100px;
-  width: 420px;
+  width: 450px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
   overflow: hidden;
   pointer-events: auto;
   user-select: none;
@@ -990,13 +955,14 @@ onUnmounted(() => {
 
 /* Header */
 .trigger-header {
-  background: linear-gradient(135deg, #1877f2 0%, #4267B2 100%);
+  background: #0067b8;
   color: white;
-  padding: 12px 16px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  cursor: grab;
+  cursor: move;
+  user-select: none;
 }
 
 .trigger-header:active {
@@ -1054,7 +1020,7 @@ onUnmounted(() => {
 /* Content */
 .trigger-content {
   padding: 20px;
-  max-height: 500px;
+  max-height: 600px;
   overflow-y: auto;
 }
 
@@ -1094,7 +1060,7 @@ onUnmounted(() => {
 
 /* Step Title */
 .step-title {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
   color: #333;
   margin: 0;
@@ -1342,8 +1308,8 @@ onUnmounted(() => {
   background: #f8f9fa;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
+  padding: 10px;
+  margin-bottom: 10px;
 }
 
 .existing-events-header {
@@ -1451,6 +1417,42 @@ onUnmounted(() => {
   border-radius: 4px;
 }
 
+.save-btn {
+  background: #0067b8 !important;
+  color: white !important;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.save-btn:hover,
+.back-btn:hover,
+.reselect-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.back-btn,
+.reselect-btn {
+  border: none;
+  border-radius: 10px;
+  border: 1px solid #818181;
+  padding: 12px 24px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-size: 14px;
+}
 /* Responsive */
 @media (max-width: 480px) {
   .trigger-popup {
