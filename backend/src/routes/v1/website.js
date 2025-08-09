@@ -10,6 +10,7 @@ const { validate } = require('../../middleware/validation');
 const websiteValidators = require('../../validators/websiteValidators');
 const websiteController = require('../../controllers/websiteController');
 const qualityController = require('../../controllers/qualityController');
+const eventTriggerController = require('../../controllers/eventTriggerController');
 
 const router = express.Router();
 
@@ -34,14 +35,26 @@ router.route('/:websiteId/datamaps')
 router.route('/:websiteId/datamaps/:mapId')
   .delete(validate(websiteValidators.deleteDataMappingSchema), websiteController.deleteDataMapping);
 
-// --- Routes cho Pixels (thuộc một Website) ---
-router.route('/:websiteId/pixels')
-  .post(validate(websiteValidators.createPixelSchema), websiteController.addPixel)
-  .get(validate(websiteValidators.getWebsiteSchema), websiteController.getPixels);
+// --- Routes cho Event Triggers (MỚI) - Đặt trước để tránh conflict ---
+router.route('/:websiteId/pixels/:pixelId/triggers/bulk-toggle')
+  .post(validate(websiteValidators.bulkToggleTriggersSchema), eventTriggerController.bulkToggleTriggers);
 
+router.route('/:websiteId/pixels/:pixelId/triggers/:id')
+  .put(validate(websiteValidators.updateEventTriggerSchema), eventTriggerController.updateTrigger)
+  .delete(validate(websiteValidators.deleteEventTriggerSchema), eventTriggerController.deleteTrigger);
+
+router.route('/:websiteId/pixels/:pixelId/triggers')
+  .get(validate(websiteValidators.getWebsitePixelSchema), eventTriggerController.getTriggersForWebsitePixel)
+  .post(validate(websiteValidators.createEventTriggerSchema), eventTriggerController.createTrigger);
+
+// --- Routes cho Pixels (thuộc một Website) ---
 router.route('/:websiteId/pixels/:pixelId')
   .put(validate(websiteValidators.updatePixelSchema), websiteController.updatePixel)
   .delete(validate(websiteValidators.deletePixelSchema), websiteController.deletePixel);
+
+router.route('/:websiteId/pixels')
+  .post(validate(websiteValidators.createPixelSchema), websiteController.addPixel)
+  .get(validate(websiteValidators.getWebsiteSchema), websiteController.getPixels);
 
 // --- Routes cho Event Filters ---
 router.route('/:websiteId/event-filters')

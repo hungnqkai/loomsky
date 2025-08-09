@@ -55,6 +55,7 @@ const models = {
   Session: require('./Session')(sequelize, Sequelize.DataTypes),
   Event: require('./Event')(sequelize, Sequelize.DataTypes),
   DataMapping: require('./DataMapping')(sequelize, Sequelize.DataTypes),
+  EventTrigger: require('./EventTrigger')(sequelize, Sequelize.DataTypes),
 };
 
 // Set up associations

@@ -10,6 +10,12 @@ module.exports = (sequelize, DataTypes) => {
       Pixel.belongsTo(models.Website, {
         foreignKey: 'website_id',
       });
+      
+      // Pixel has many EventTriggers
+      Pixel.hasMany(models.EventTrigger, {
+        foreignKey: 'pixel_id',
+        as: 'event_triggers'
+      });
     }
   }
   Pixel.init({

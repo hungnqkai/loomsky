@@ -28,6 +28,12 @@ module.exports = (sequelize, DataTypes) => {
       Website.hasMany(models.DataMapping, {
         foreignKey: 'website_id',
       });
+      
+      // Website has many EventTriggers
+      Website.hasMany(models.EventTrigger, {
+        foreignKey: 'website_id',
+        as: 'event_triggers'
+      });
     }
   }
   Website.init({

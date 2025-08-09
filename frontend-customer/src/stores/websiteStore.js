@@ -5,6 +5,7 @@ File: src/stores/websiteStore.js (CẬP NHẬT)
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import websiteService from '../services/websiteService';
+import eventTriggerService from '../services/eventTriggerService';
 
 export const useWebsiteStore = defineStore('website', () => {
   // --- STATE ---
@@ -14,6 +15,7 @@ export const useWebsiteStore = defineStore('website', () => {
   const eventFilters = ref([]);
   const blacklist = ref([]);
   const dataMappings = ref([]);
+  const eventTriggers = ref([]);
   const connectionStatus = ref(null);
   const dashboardStats = ref(null);
   // Quality metrics state
@@ -501,6 +503,107 @@ export const useWebsiteStore = defineStore('website', () => {
     return 'red';
   }
 
+  // === Event Triggers Actions ===
+  async function fetchEventTriggers(websiteId, pixelId, params = {}) {
+    clearMessages();
+    try {
+      const response = await eventTriggerService.getTriggersForWebsitePixel(websiteId, pixelId, params);
+      // Update triggers for this specific pixel
+      if (response.success) {
+        return response.data.triggers;
+      }
+      return [];
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Failed to fetch event triggers.';
+      return [];
+    }
+  }
+
+  async function createEventTrigger(websiteId, pixelId, triggerData) {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      const response = await eventTriggerService.createTrigger(websiteId, pixelId, triggerData);
+      if (response.success) {
+        successMessage.value = 'Event trigger created successfully!';
+        return response.data;
+      }
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Failed to create event trigger.';
+      throw err;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
+  async function updateEventTrigger(websiteId, pixelId, triggerId, updateData) {
+    clearMessages();
+    try {
+      const response = await eventTriggerService.updateTrigger(websiteId, pixelId, triggerId, updateData);
+      if (response.success) {
+        successMessage.value = 'Event trigger updated successfully!';
+        return response.data;
+      }
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Failed to update event trigger.';
+      throw err;
+    }
+  }
+
+  async function deleteEventTrigger(websiteId, pixelId, triggerId) {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      const response = await eventTriggerService.deleteTrigger(websiteId, pixelId, triggerId);
+      if (response.success) {
+        successMessage.value = 'Event trigger deleted successfully!';
+        return true;
+      }
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Failed to delete event trigger.';
+      throw err;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
+  async function bulkToggleEventTriggers(websiteId, pixelId, triggerIds, enabled) {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      const response = await eventTriggerService.bulkToggleTriggers(websiteId, pixelId, {
+        trigger_ids: triggerIds,
+        enabled
+      });
+      if (response.success) {
+        const action = enabled ? 'enabled' : 'disabled';
+        successMessage.value = `${response.data.updated_count} triggers ${action} successfully!`;
+        return response.data;
+      }
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Failed to update triggers.';
+      throw err;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
+  async function initTriggerSetupSession(websiteId, pixelId) {
+    actionLoading.value = true;
+    clearMessages();
+    try {
+      const response = await eventTriggerService.initTriggerSetupSession(websiteId, pixelId);
+      if (response.success) {
+        return response.data;
+      }
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Failed to initialize trigger setup session.';
+      throw err;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
   // Export quality data
   async function exportQualityData(websiteId, format = 'json', timeRange = '24h') {
     actionLoading.value = true;
@@ -531,7 +634,7 @@ export const useWebsiteStore = defineStore('website', () => {
 
   return {
     // State
-    websites, currentWebsite, pixels, eventFilters, blacklist, dataMappings,
+    websites, currentWebsite, pixels, eventFilters, blacklist, dataMappings, eventTriggers,
     connectionStatus, dashboardStats, qualityMetrics, performanceMetrics, qualityAlerts,
     loading, actionLoading, error, successMessage,
     
@@ -542,6 +645,10 @@ export const useWebsiteStore = defineStore('website', () => {
     fetchBlacklist, addBlacklistEntry, deleteBlacklistEntry,
     fetchDataMappings, initSetupSession, addDataMapping, deleteDataMapping,
     fetchConnectionStatus, fetchDashboardStats, refreshWebsiteStatus,
+    
+    // Event Triggers actions
+    fetchEventTriggers, createEventTrigger, updateEventTrigger, deleteEventTrigger,
+    bulkToggleEventTriggers, initTriggerSetupSession,
     
     // Quality metrics actions
     fetchQualityMetrics, fetchPerformanceMetrics, fetchQualityAlerts,

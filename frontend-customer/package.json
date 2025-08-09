@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:mapper": "vite build --mode mapper",
+    "build:triggers": "vite build --mode triggers",
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "format": "prettier --write src/"

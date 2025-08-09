@@ -7,6 +7,7 @@ const express = require('express');
 const { validate } = require('../../middleware/validation');
 const sdkValidators = require('../../validators/sdkValidators');
 const sdkController = require('../../controllers/sdkController');
+const eventTriggerController = require('../../controllers/eventTriggerController');
 const { authenticateToken } = require('../../middleware/auth');
 
 const router = express.Router();
@@ -27,5 +28,9 @@ router.post('/verify', validate(sdkValidators.verifyApiKeySchema), sdkController
 
 // Endpoint này sẽ được SDK gọi để lấy toàn bộ cấu hình tracking
 router.get('/config', sdkController.getConfig);
+
+// --- Routes cho Event Triggers (SDK Config) ---
+// Endpoint này được SDK gọi để lấy triggers cho pixel cụ thể
+router.get('/pixels/:pixelId/triggers', eventTriggerController.getTriggersForPixel);
 
 module.exports = router;

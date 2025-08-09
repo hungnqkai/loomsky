@@ -207,6 +207,10 @@ File: src/views/tracking/WebsiteDetailView.vue (CẬP NHẬT)
           <data-mapper-manager :website-id="id" />
         </div>
 
+        <div v-if="tab === 'triggers'" class="tab-content active">
+          <event-triggers-manager :website-id="id" />
+        </div>
+
         <div v-if="tab === 'pixels'" class="tab-content active">
           <pixel-manager 
             :website-id="id" 
@@ -658,6 +662,7 @@ import PixelManager from '@/components/tracking/PixelManager.vue';
 import EventFilterManager from '@/components/tracking/EventFilterManager.vue';
 import BlacklistManager from '@/components/tracking/BlacklistManager.vue';
 import DataMapperManager from '@/components/tracking/DataMapperManager.vue';
+import EventTriggersManager from '@/components/tracking/EventTriggersManager.vue';
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -682,6 +687,7 @@ const testingEvents = ref(false);
 const tabs = ref([
   { value: 'setup', label: 'Get Started', icon: 'mdi-rocket-launch' },
   { value: 'datamaps', label: 'Data Dictionary', icon: 'mdi-chart-bar' },
+  { value: 'triggers', label: 'Event Triggers', icon: 'mdi-cursor-default-click-outline' },
   { value: 'pixels', label: 'Pixels', icon: 'mdi-magnify' },
   { value: 'filters', label: 'Auto Event Filter', icon: 'mdi-cog' },
   { value: 'blacklist', label: 'Blacklist', icon: 'mdi-cancel' }

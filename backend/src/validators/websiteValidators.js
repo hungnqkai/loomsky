@@ -11,6 +11,13 @@ const paramsWebsiteId = {
     }),
 };
 
+const paramsWebsitePixelId = {
+    params: Joi.object({
+        websiteId: Joi.string().uuid().required(),
+        pixelId: Joi.string().uuid().required(),
+    }),
+};
+
 const createWebsiteSchema = {
     body: Joi.object({
         name: Joi.string().min(3).max(100).required(),
@@ -99,8 +106,89 @@ const createBlacklistSchema = {
     }),
 };
 
+// --- EVENT TRIGGER SCHEMAS (MỚI) ---
+const createEventTriggerSchema = {
+    params: Joi.object({
+        websiteId: Joi.string().uuid().required(),
+        pixelId: Joi.string().uuid().required(),
+    }),
+    body: Joi.object({
+        event_name: Joi.string().min(1).max(100).required(),
+        trigger_type: Joi.string().valid('url_match', 'click_element').required(),
+        
+        // URL trigger fields (conditional)
+        url_pattern: Joi.when('trigger_type', {
+            is: 'url_match',
+            then: Joi.string().min(1).required(),
+            otherwise: Joi.forbidden()
+        }),
+        url_match_type: Joi.when('trigger_type', {
+            is: 'url_match',
+            then: Joi.string().valid('contains', 'equals', 'starts_with', 'ends_with', 'regex').required(),
+            otherwise: Joi.forbidden()
+        }),
+        
+        // Click trigger fields (conditional)
+        selector: Joi.when('trigger_type', {
+            is: 'click_element',
+            then: Joi.string().min(1).required(),
+            otherwise: Joi.forbidden()
+        }),
+        element_text: Joi.when('trigger_type', {
+            is: 'click_element',
+            then: Joi.string().allow('').optional(),
+            otherwise: Joi.forbidden()
+        }),
+        
+        // Optional fields
+        enabled: Joi.boolean().default(true),
+        priority: Joi.number().integer().min(0).default(0)
+    })
+};
+
+const updateEventTriggerSchema = {
+    params: Joi.object({
+        websiteId: Joi.string().uuid().required(),
+        pixelId: Joi.string().uuid().required(),
+        id: Joi.string().uuid().required(),
+    }),
+    body: Joi.object({
+        event_name: Joi.string().min(1).max(100),
+        enabled: Joi.boolean(),
+        priority: Joi.number().integer().min(0),
+        
+        // URL trigger fields (conditional based on existing trigger_type)
+        url_pattern: Joi.string().min(1),
+        url_match_type: Joi.string().valid('contains', 'equals', 'starts_with', 'ends_with', 'regex'),
+        
+        // Click trigger fields (conditional based on existing trigger_type)
+        selector: Joi.string().min(1),
+        element_text: Joi.string().allow('')
+    }).min(1) // At least one field must be provided
+};
+
+const deleteEventTriggerSchema = {
+    params: Joi.object({
+        websiteId: Joi.string().uuid().required(),
+        pixelId: Joi.string().uuid().required(),
+        id: Joi.string().uuid().required(),
+    })
+};
+
+const bulkToggleTriggersSchema = {
+    params: Joi.object({
+        websiteId: Joi.string().uuid().required(),
+        pixelId: Joi.string().uuid().required(),
+    }),
+    body: Joi.object({
+        trigger_ids: Joi.array().items(Joi.string().uuid()).min(1).required(),
+        enabled: Joi.boolean().required()
+    })
+};
+
 module.exports = {
     getWebsiteSchema: paramsWebsiteId,
+    getWebsitePixelSchema: paramsWebsitePixelId,
     deleteWebsiteSchema: paramsWebsiteId,
     createWebsiteSchema,
     updateWebsiteSchema,
@@ -114,4 +202,9 @@ module.exports = {
     deleteEventFilterSchema: { params: Joi.object({ websiteId: Joi.string().uuid().required(), filterId: Joi.string().uuid().required() }) },
     createBlacklistSchema,
     deleteBlacklistSchema: { params: Joi.object({ websiteId: Joi.string().uuid().required(), blacklistId: Joi.string().uuid().required() }) },
+    // Event Trigger schemas
+    createEventTriggerSchema,
+    updateEventTriggerSchema,
+    deleteEventTriggerSchema,
+    bulkToggleTriggersSchema,
 };

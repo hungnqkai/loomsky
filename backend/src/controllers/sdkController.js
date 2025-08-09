@@ -105,7 +105,15 @@ const sdkController = {
             where: { api_key: apiKey },
             // Dùng eager loading để lấy tất cả dữ liệu liên quan trong 1 câu lệnh query
             include: [
-                { model: models.Pixel },
+                { 
+                    model: models.Pixel,
+                    include: [{
+                        model: models.EventTrigger,
+                        as: 'event_triggers',
+                        where: { enabled: true },
+                        required: false
+                    }]
+                },
                 { model: models.EventFilter },
                 { model: models.Blacklist },
                 { model: models.DataMapping },
@@ -133,10 +141,19 @@ const sdkController = {
         // Trích xuất và định dạng lại dữ liệu
         const planFeatures = website.Client?.activeSubscription?.plan?.features || {};
 
+        // Process pixels with triggers grouped by type for SDK efficiency
+        const processedPixels = (website.Pixels || []).map(pixel => ({
+            ...pixel.toJSON(),
+            event_triggers: {
+                url_triggers: pixel.event_triggers?.filter(t => t.trigger_type === 'url_match') || [],
+                click_triggers: pixel.event_triggers?.filter(t => t.trigger_type === 'click_element') || []
+            }
+        }));
+
         const config = {
             websiteId: website.id,
             planFeatures: planFeatures,
-            pixels: website.Pixels || [],
+            pixels: processedPixels,
             eventFilters: website.EventFilters || [],
             blacklist: website.Blacklist || [],
             dataMappings: website.DataMappings || [],

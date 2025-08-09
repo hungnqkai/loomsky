@@ -43,6 +43,43 @@ export default defineConfig(({ mode }) => {
         }
       }
     }
+  } else if (mode === 'triggers') {
+    // --- Cấu hình build dành riêng cho Event Triggers Mini-App ---
+    return {
+      // Bật chế độ build library
+      build: {
+        lib: {
+          // File đầu vào của mini-app
+          entry: resolve(__dirname, 'src/triggers.js'),
+          // Tên của biến global khi được chèn vào trang
+          name: 'LoomSkyEventTriggers',
+          // Tên file output
+          fileName: 'triggers',
+          // Định dạng IIFE (Immediately Invoked Function Expression) là hoàn hảo để chèn vào thẻ <script>
+          formats: ['iife'], 
+        },
+        emptyOutDir: false, // Không xóa thư mục dist để build chính không bị ảnh hưởng
+        rollupOptions: {
+          output: {
+            // Đặt tên file output một cách tường minh
+            entryFileNames: 'triggers.js',
+            assetFileNames: 'triggers.[ext]',
+          },
+        },
+      },
+      plugins: [
+        vue(),
+        vuetify({ autoImport: true }),
+      ],
+      define: {
+        'process.env': {}
+      },
+      resolve: {
+        alias: {
+          '@': fileURLToPath(new URL('./src', import.meta.url))
+        }
+      }
+    }
   } else {
     // --- Cấu hình build mặc định cho ứng dụng Dashboard chính ---
     return {
