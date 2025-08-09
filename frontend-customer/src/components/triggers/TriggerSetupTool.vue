@@ -548,6 +548,7 @@ onUnmounted(() => {
 
 <style scoped>
 .loomsky-trigger-app {
+  background: transparent !important;
   position: fixed;
   top: 0;
   left: 0;

@@ -214,15 +214,31 @@ class EventTriggerManager {
             const appMountPoint = document.createElement('div');
             document.body.appendChild(hostElement);
             
-            // Load CSS first and wait for it to complete (same as mapper)
-            await new Promise((resolve, reject) => {
-                const cssLink = document.createElement('link');
-                cssLink.rel = 'stylesheet';
-                cssLink.href = `${TRIGGER_ASSETS_BASE_URL}/triggers.css`;
-                cssLink.onload = resolve;
-                cssLink.onerror = reject;
-                shadowRoot.appendChild(cssLink);
-            });
+            // Load CSS as text and wrap with Shadow DOM isolation
+            const cssResponse = await fetch(`${TRIGGER_ASSETS_BASE_URL}/triggers.css`);
+            if (!cssResponse.ok) {
+                throw new Error('Failed to load trigger setup CSS');
+            }
+            
+            let cssText = await cssResponse.text();
+            
+            // Wrap CSS with :host isolation and contain styles
+            cssText = `:host { 
+                all: initial; 
+                contain: layout style paint;
+                isolation: isolate;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                pointer-events: none;
+                z-index: 999999;
+            } ${cssText}`;
+            
+            const style = document.createElement('style');
+            style.textContent = cssText;
+            shadowRoot.appendChild(style);
             
             console.log('LoomSky SDK: Trigger CSS loaded successfully.');
 
