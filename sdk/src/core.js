@@ -36,7 +36,12 @@ class Core {
             const sessionData = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_KEY));
             if (sessionData && sessionData.isActive && sessionData.token) {
                 console.log('LoomSky SDK: Found active setup session in sessionStorage.');
-                return { isSetupMode: true, token: sessionData.token, fromSession: true };
+                return { 
+                    isSetupMode: true, 
+                    setupType: sessionData.setupType || 'mapper', // Default to mapper for backward compatibility
+                    token: sessionData.token, 
+                    fromSession: true 
+                };
             }
         } catch (e) { /* ... */ }
         
@@ -80,9 +85,13 @@ class Core {
             }
             
             if (isActivated && !setupState.fromSession) {
-                const sessionData = { isActive: true, token: setupState.token };
+                const sessionData = { 
+                    isActive: true, 
+                    setupType: setupState.setupType, // Save the setup type for navigation persistence
+                    token: setupState.token 
+                };
                 sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
-                console.log('LoomSky SDK: Setup session saved.');
+                console.log(`LoomSky SDK: Setup session saved (${setupState.setupType} mode).`);
             }
             
             if (isActivated) {
