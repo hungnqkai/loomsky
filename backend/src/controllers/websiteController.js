@@ -322,15 +322,26 @@ const websiteController = {
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
         
         if (latestSession || latestEvent) {
-            const sessionTime = latestSession ? new Date(latestSession.updated_at) : null;
-            const eventTime = latestEvent ? new Date(latestEvent.created_at) : null;
+            // Validate and create date objects safely
+            let sessionTime = null;
+            let eventTime = null;
+            
+            if (latestSession && latestSession.updated_at) {
+                const tempSessionTime = new Date(latestSession.updated_at);
+                sessionTime = !isNaN(tempSessionTime.getTime()) ? tempSessionTime : null;
+            }
+            
+            if (latestEvent && latestEvent.created_at) {
+                const tempEventTime = new Date(latestEvent.created_at);
+                eventTime = !isNaN(tempEventTime.getTime()) ? tempEventTime : null;
+            }
             
             // Lấy thời gian mới nhất
             lastSeen = sessionTime && eventTime 
                 ? (sessionTime > eventTime ? sessionTime : eventTime)
                 : (sessionTime || eventTime);
             
-            connected = lastSeen > fiveMinutesAgo;
+            connected = lastSeen ? lastSeen > fiveMinutesAgo : false;
             
             // Xác định method dựa trên properties hoặc device_info
             if (latestSession && latestSession.device_info) {
@@ -407,8 +418,19 @@ const websiteController = {
 
         let lastActivity = null;
         if (latestEvent || latestSession) {
-            const eventTime = latestEvent ? new Date(latestEvent.created_at) : null;
-            const sessionTime = latestSession ? new Date(latestSession.updated_at) : null;
+            // Validate and create date objects safely
+            let eventTime = null;
+            let sessionTime = null;
+            
+            if (latestEvent && latestEvent.created_at) {
+                const tempEventTime = new Date(latestEvent.created_at);
+                eventTime = !isNaN(tempEventTime.getTime()) ? tempEventTime : null;
+            }
+            
+            if (latestSession && latestSession.updated_at) {
+                const tempSessionTime = new Date(latestSession.updated_at);
+                sessionTime = !isNaN(tempSessionTime.getTime()) ? tempSessionTime : null;
+            }
             
             lastActivity = eventTime && sessionTime 
                 ? (eventTime > sessionTime ? eventTime : sessionTime)

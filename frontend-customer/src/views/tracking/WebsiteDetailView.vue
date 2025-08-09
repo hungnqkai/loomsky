@@ -130,8 +130,12 @@ File: src/views/tracking/WebsiteDetailView.vue (CẬP NHẬT)
               <div class="setup-description">
                 Connect your advertising pixels (Facebook, Google, TikTok) to automatically send conversion data.
               </div>
-              <button class="setup-action" @click="tab = 'pixels'">
-                Setup Pixels
+              <button 
+                class="setup-action" 
+                :class="{ completed: isPixelSetupCompleted() }"
+                @click="tab = 'datamaps'"
+              >
+                {{ PixelSetupButtonText() }}
               </button>
             </div>
 
@@ -781,6 +785,12 @@ const getDataMappingButtonText = () => {
 
 const isPixelSetupCompleted = () => {
   return (dashboardStats.value?.totalPixels || 0) > 0;
+};
+
+const PixelSetupButtonText = () => {
+  const total = dashboardStats.value?.dataMapping?.total || 0;
+  if (total === 0) return 'Setup Pixels';
+  return `✓ ${total} Pixels`;
 };
 
 const isEventFilterCompleted = () => {
